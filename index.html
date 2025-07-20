@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Flash Summarizer Pro</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEzIDJMMy4xNCA4LjVMMi41IDEwTDMgMTFIMTJMMTEgMTlMMjEgMTFIMTJMMTMgMloiIGZpbGw9IiM2MzY2ZjEiLz4KPHN2Zz4K" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
     <meta name="theme-color" content="#4f46e5">
@@ -81,10 +82,35 @@
         .articles-container { display: grid; gap: 1.5rem; grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); }
         
         /* --- Article Card --- */
-        .article-card { background-color: var(--bg-secondary); border-radius: var(--radius-lg); overflow: hidden; border: 1px solid var(--border); }
+        .article-card { background-color: var(--bg-secondary); border-radius: var(--radius-lg); overflow: hidden; border: 1px solid var(--border); transition: var(--transition); }
+        .article-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); border-color: var(--border-light); }
         .article-header { width: 100%; padding: 1rem 1.5rem; text-align: left; background: none; border: none; color: inherit; cursor: pointer; transition: var(--transition-fast); }
         .article-header:hover { background-color: var(--bg-tertiary); }
         .article-title { font-size: 1.125rem; font-weight: 600; color: var(--text-primary); margin: 0; }
+        
+        /* NEW: Article URL styling */
+        .article-url { 
+            display: inline-flex; 
+            align-items: center; 
+            gap: 0.5rem; 
+            font-size: 0.875rem; 
+            color: var(--primary-light); 
+            text-decoration: none; 
+            margin-top: 0.5rem; 
+            transition: var(--transition-fast); 
+            padding: 0.25rem 0.5rem;
+            border-radius: var(--radius);
+            background: rgba(var(--bg-primary), 0.7);
+        }
+        .article-url:hover { 
+            color: var(--primary); 
+            background: var(--bg-primary);
+        }
+        .article-url .icon { 
+            width: 1rem; 
+            height: 1rem; 
+        }
+        
         .article-content-wrapper { padding: 1.5rem; border-top: 1px solid var(--border-light); }
         .article-content-wrapper > * + * { margin-top: 1.5rem; } /* Vertical spacing */
         h4 { font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; }
@@ -99,7 +125,7 @@
         /* --- General Components --- */
         .btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.6rem 1.2rem; border-radius: var(--radius); font-weight: 600; cursor: pointer; transition: var(--transition-fast); border: 1px solid transparent; }
         .btn-primary { background-color: var(--primary); color: white; border-color: var(--primary); }
-        .btn-primary:hover:not(:disabled) { background-color: var(--primary-dark); }
+        .btn-primary:hover:not(:disabled) { background-color: var(--primary-dark); transform: translateY(-1px); box-shadow: var(--shadow-lg); }
         .btn-secondary { background-color: transparent; color: var(--text-secondary); border-color: var(--border); }
         .btn-secondary:hover:not(:disabled) { background-color: var(--bg-tertiary); color: var(--text-primary); }
         .btn:disabled { opacity: 0.5; cursor: not-allowed; }
@@ -200,7 +226,7 @@
                     <div class="main-actions">
                         <button id="submitBtn" class="btn btn-primary">
                             <span id="submitBtnIconContainer">
-                                <svg class="icon" viewBox="0 0 24 24"><path d="M12 5v14m-7 8h14"></path></svg>
+                                <svg class="icon" viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path></svg>
                             </span>
                             <span id="submitBtnText">Analyze & Save</span>
                         </button>
@@ -257,7 +283,13 @@
         <div class="article-card">
             <button class="article-header">
                 <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
-                    <h3 class="article-title" style="text-align: left; padding-right: 1rem; flex: 1;"></h3>
+                    <div style="text-align: left; padding-right: 1rem; flex: 1;">
+                        <h3 class="article-title"></h3>
+                        <a class="article-url hidden" target="_blank" rel="noopener noreferrer">
+                            <svg class="icon" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+                            <span class="url-text"></span>
+                        </a>
+                    </div>
                     <div style="display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0;">
                         <div class="loader-icon hidden">
                            <svg class="icon animate-spin" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg>
@@ -434,7 +466,7 @@
                 }
             }
 
-            // --- ** CORE LOGIC (FIXED) ** ---
+            // --- ** CORE LOGIC (UPDATED FOR URLs) ** ---
             function parseArticles(text) {
                 let articles = [];
                 
@@ -494,6 +526,21 @@
                 const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
                 let title = UNTITLED_PLACEHOLDER;
                 let content = text;
+                let url = null;
+
+                // NEW: Check for URL at the beginning
+                const urlMatch = lines[0] && lines[0].match(/^URL:\s*(.+)$/);
+                if (urlMatch) {
+                    url = urlMatch[1].trim();
+                    // Remove URL line and any separator lines from content
+                    let contentStartIndex = 1;
+                    while (contentStartIndex < lines.length && 
+                           (lines[contentStartIndex].match(/^-{5,}$/) || lines[contentStartIndex] === '')) {
+                        contentStartIndex++;
+                    }
+                    lines.splice(0, contentStartIndex);
+                    content = lines.join('\n');
+                }
 
                 const junkTitlePatterns = [
                     /^\|/, /^the economist$/i, /our daily political update/i, /figure of the day/i,
@@ -505,6 +552,8 @@
                 // Try to find a good title from the first few lines
                 for (let i = 0; i < Math.min(lines.length, 10); i++) {
                     const line = lines[i];
+                    if (!line) continue;
+                    
                     const isAllCaps = line === line.toUpperCase() && line.length > 1 && !line.match(/\d/);
                     const isLikelyJunk = junkTitlePatterns.some(p => p.test(line));
 
@@ -523,6 +572,7 @@
                     id: Date.now() + index, // Remove random component to keep it as integer
                     title,
                     content,
+                    url, // NEW: Store the URL
                     summary: null,
                     isLoading: true,
                     error: null
@@ -681,6 +731,27 @@ ARTICLES:\n\n`;
                 template.querySelector('.article-title').textContent = article.title;
                 template.querySelector('.full-article-box').textContent = article.content;
 
+                // NEW: Handle URL display
+                const urlElement = template.querySelector('.article-url');
+                if (article.url) {
+                    urlElement.href = article.url;
+                    const urlText = template.querySelector('.url-text');
+                    try {
+                        const domain = new URL(article.url).hostname.replace('www.', '');
+                        urlText.textContent = domain;
+                    } catch {
+                        urlText.textContent = 'Source';
+                    }
+                    urlElement.classList.remove('hidden');
+                    
+                    // Prevent header click when clicking on URL
+                    urlElement.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                    });
+                } else {
+                    urlElement.classList.add('hidden');
+                }
+
                 const loaderIcon = template.querySelector('.loader-icon');
                 const summaryContainer = template.querySelector('.summary-container');
                 const chevronIcon = template.querySelector('.chevron-icon');
@@ -795,7 +866,7 @@ ARTICLES:\n\n`;
                     iconContainer.innerHTML = `<svg class="icon animate-spin" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg>`;
                     textEl.textContent = 'Processing...';
                 } else {
-                    iconContainer.innerHTML = `<svg class="icon" viewBox="0 0 24 24"><path d="M12 5v14m-7 8h14"></path></svg>`;
+                    iconContainer.innerHTML = `<svg class="icon" viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path></svg>`;
                     textEl.textContent = 'Analyze & Save';
                 }
             }
