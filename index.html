@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="en" class="theme-dusk">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Flash Summarizer Pro</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
+    <meta name="theme-color" content="#4f46e5">
+    <style>
+        :root {
+            --primary: #6366f1; --primary-dark: #4f46e5; --primary-light: #8b5cf6;
+            --success: #10b981; --danger: #ef4444;
+            --bg-primary: #111827; --bg-secondary: #1f2937; --bg-secondary-rgb: 31, 41, 55; --bg-tertiary: #374151; --bg-quaternary: #4b5563;
+            --text-primary: #f3f4f6; --text-secondary: #d1d5db; --text-tertiary: #9ca3af;
+            --border: #374151; --border-light: #4b5563;
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            --blur: blur(8px); --radius: 0.5rem; --radius-lg: 0.75rem; --radius-xl: 1rem;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-fast: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+            --user-font-family: 'Inter', sans-serif;
+        }
+        /* --- Themes --- */
+        .theme-light { --primary: #3b82f6; --primary-dark: #2563eb; --bg-primary: #ffffff; --bg-secondary: #f9fafb; --bg-secondary-rgb: 249, 250, 251; --bg-tertiary: #f3f4f6; --bg-quaternary: #e5e7eb; --text-primary: #111827; --text-secondary: #374151; --text-tertiary: #6b7280; --border: #e5e7eb; --border-light: #d1d5db; }
+        .theme-forest { --primary: #16a34a; --primary-dark: #15803d; --bg-primary: #1c1917; --bg-secondary: #292524; --bg-secondary-rgb: 41, 37, 36; --bg-tertiary: #44403c; --bg-quaternary: #57534e; --text-primary: #f5f5f4; --text-secondary: #d6d3d1; --text-tertiary: #a8a29e; --border: #44403c; --border-light: #57534e; }
+        .theme-rose { --primary: #e11d48; --primary-dark: #be123c; --bg-primary: #1f1d2b; --bg-secondary: #26233a; --bg-secondary-rgb: 38, 35, 58; --bg-tertiary: #3e3a59; --bg-quaternary: #4a4867; --text-primary: #e0def4; --text-secondary: #908caa; --text-tertiary: #6e6a86; --border: #3e3a59; --border-light: #4a4867; }
+        .theme-dusk { --primary: #4f46e5; --primary-dark: #4338ca; --bg-primary: #111827; --bg-secondary: #1f2937; --bg-secondary-rgb: 31, 41, 55; --bg-tertiary: #374151; --bg-quaternary: #4b5563; --text-primary: #f3f4f6; --text-secondary: #d1d5db; --text-tertiary: #9ca3af; --border: #374151; --border-light: #4b5563; }
+        .theme-ocean { --primary: #0ea5e9; --primary-dark: #0284c7; --bg-primary: #0c1427; --bg-secondary: #121c33; --bg-secondary-rgb: 18, 28, 51; --bg-tertiary: #21304f; --bg-quaternary: #2e4166; --text-primary: #eaf3ff; --text-secondary: #a8bfe0; --text-tertiary: #7a9cc6; --border: #21304f; --border-light: #2e4166; }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { height: 100%; overflow: hidden; }
+        body { font-family: var(--user-font-family); background-color: var(--bg-primary); color: var(--text-primary); -webkit-font-smoothing: antialiased; }
+        button, input, textarea { font-family: inherit; }
+        .icon { display: inline-block; width: 1.25em; height: 1.25em; stroke-width: 2; stroke: currentColor; fill: none; vertical-align: middle; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .animate-spin { animation: spin 1s linear infinite; }
+        .hidden { display: none !important; }
+
+        /* --- Layout --- */
+        .app-container { display: flex; flex-direction: column; height: 100vh; }
+        .app-header { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.5rem; background: rgba(var(--bg-secondary-rgb), 0.9); backdrop-filter: var(--blur); border-bottom: 1px solid var(--border); z-index: 10; flex-shrink: 0; }
+        .header-brand { display: flex; align-items: center; gap: 0.75rem; }
+        .header-brand h1 { font-size: 1.5rem; font-weight: 600; }
+        .header-actions { display: flex; align-items: center; gap: 1rem; }
+        .main-content { display: flex; flex: 1; overflow: hidden; }
+        
+        /* --- Sidebar --- */
+        .sidebar { width: 280px; background: var(--bg-secondary); border-right: 1px solid var(--border); display: flex; flex-direction: column; flex-shrink: 0; transition: width 0.3s; }
+        .sidebar-header { padding: 1rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .sidebar-header h2 { font-size: 1rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary); }
+        .history-list { flex: 1; overflow-y: auto; padding: 0.5rem; }
+        .history-item { 
+            display: block; 
+            width: 100%; 
+            padding: 0.75rem 1rem; 
+            margin-bottom: 0.5rem;
+            border-radius: var(--radius); 
+            cursor: pointer; 
+            transition: var(--transition-fast); 
+            border: 1px solid transparent; 
+            text-align: left; 
+            background: var(--bg-primary);
+            color: var(--text-secondary);
+        }
+        .history-item:hover { background: var(--bg-tertiary); color: var(--text-primary); }
+        .history-item.active { background: var(--primary); color: white; font-weight: 600; }
+        .history-item .timestamp { font-size: 0.875rem; font-weight: 500; margin-bottom: 0.25rem; }
+        .history-item .article-count { font-size: 0.75rem; opacity: 0.8; }
+        
+        /* --- Main Area --- */
+        .main-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+        .input-section { padding: 1.5rem; border-bottom: 1px solid var(--border); background: var(--bg-primary); }
+        textarea { width: 100%; height: 9rem; padding: 0.75rem 1rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-tertiary); color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 0.875rem; resize: vertical; }
+        textarea:focus { outline: none; border-color: var(--primary); }
+        textarea:disabled { opacity: 0.7; }
+        .main-actions { display: flex; gap: 1rem; margin-top: 1rem; }
+        .articles-display { flex: 1; overflow-y: auto; padding: 1.5rem; }
+        .articles-container { display: grid; gap: 1.5rem; grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); }
+        
+        /* --- Article Card --- */
+        .article-card { background-color: var(--bg-secondary); border-radius: var(--radius-lg); overflow: hidden; border: 1px solid var(--border); }
+        .article-header { width: 100%; padding: 1rem 1.5rem; text-align: left; background: none; border: none; color: inherit; cursor: pointer; transition: var(--transition-fast); }
+        .article-header:hover { background-color: var(--bg-tertiary); }
+        .article-title { font-size: 1.125rem; font-weight: 600; color: var(--text-primary); margin: 0; }
+        .article-content-wrapper { padding: 1.5rem; border-top: 1px solid var(--border-light); }
+        .article-content-wrapper > * + * { margin-top: 1.5rem; } /* Vertical spacing */
+        h4 { font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; }
+        .summary-box { background-color: var(--bg-primary); padding: 1rem; border-radius: var(--radius); white-space: pre-line; color: var(--text-secondary); }
+        .summary-box ul { padding-left: 1.25rem; margin: 0; }
+        .summary-box li { margin-bottom: 0.5rem; }
+        details > summary { cursor: pointer; font-weight: 600; color: var(--text-secondary); }
+        .full-article-box { margin-top: 0.75rem; padding: 1rem; background-color: var(--bg-primary); border-radius: var(--radius); font-size: 0.875rem; color: var(--text-secondary); white-space: pre-line; max-height: 24rem; overflow-y: auto; }
+        .chevron-icon { transition: transform 0.2s ease; }
+        .chevron-icon.expanded { transform: rotate(90deg); }
+        
+        /* --- General Components --- */
+        .btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.6rem 1.2rem; border-radius: var(--radius); font-weight: 600; cursor: pointer; transition: var(--transition-fast); border: 1px solid transparent; }
+        .btn-primary { background-color: var(--primary); color: white; border-color: var(--primary); }
+        .btn-primary:hover:not(:disabled) { background-color: var(--primary-dark); }
+        .btn-secondary { background-color: transparent; color: var(--text-secondary); border-color: var(--border); }
+        .btn-secondary:hover:not(:disabled) { background-color: var(--bg-tertiary); color: var(--text-primary); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .icon-btn { background: none; border: none; padding: 0.5rem; color: var(--text-tertiary); border-radius: 50%; }
+        .icon-btn:hover { background: var(--bg-tertiary); color: var(--text-primary); }
+        .alert-box { padding: 1rem; margin-bottom: 1rem; border-radius: var(--radius); display: flex; gap: 0.75rem; align-items: flex-start; border: 1px solid var(--danger); background-color: rgba(239, 68, 68, 0.1); color: #fca5a5; }
+        .placeholder { text-align: center; padding: 4rem 1rem; color: var(--text-tertiary); }
+        .placeholder .icon { width: 4rem; height: 4rem; margin: 0 auto 1rem; opacity: 0.3; }
+        
+        /* --- Login & Modals --- */
+        .overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.8); backdrop-filter: var(--blur); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+        .modal-box { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius-xl); width: 90%; max-width: 480px; box-shadow: var(--shadow-xl); }
+        .modal-header { padding: 1.5rem; border-bottom: 1px solid var(--border); }
+        .modal-header h2 { font-size: 1.5rem; text-align: center; }
+        .modal-body { padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; }
+        .form-group { display: flex; flex-direction: column; gap: 0.5rem; }
+        .form-group label { font-weight: 500; color: var(--text-secondary); font-size: 0.875rem; }
+        .form-group input { padding: 0.875rem 1rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-tertiary); color: var(--text-primary); font-size: 1rem; }
+        .form-group input:focus { outline: none; border-color: var(--primary); }
+        .modal-footer { padding: 1.5rem; border-top: 1px solid var(--border); text-align: center; font-size: 0.875rem; color: var(--text-tertiary); }
+        .modal-footer a { color: var(--primary-light); text-decoration: none; }
+        .modal-footer a:hover { text-decoration: underline; }
+        
+        .theme-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); gap: 1rem; }
+        .theme-swatch { aspect-ratio: 1 / 1; border-radius: 50%; cursor: pointer; border: 3px solid transparent; background-clip: content-box; transition: var(--transition-fast); }
+        .theme-swatch:hover { transform: scale(1.1); }
+        .theme-swatch.active { border-color: var(--primary); }
+        
+        /* --- Mobile --- */
+        @media (max-width: 768px) {
+            html, body { overflow: auto; }
+            .main-content { flex-direction: column; }
+            .sidebar { width: 100%; height: auto; border-right: none; border-bottom: 1px solid var(--border); }
+            .history-list { display: flex; overflow-x: auto; padding-bottom: 0.5rem; }
+            .history-item { flex-shrink: 0; }
+            .articles-container { grid-template-columns: 1fr; }
+            .app-header { padding: 0.75rem; }
+            .header-brand h1 { font-size: 1.25rem; }
+            .icon-btn span { display: none; }
+            .main-area { flex: 1; }
+            .input-section, .articles-display { padding: 1rem; }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- App Structure -->
+    <div id="appContainer" class="app-container hidden">
+        <header class="app-header">
+            <div class="header-brand">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path></svg>
+                <h1>Flash Summarizer Pro</h1>
+            </div>
+            <div class="header-actions">
+                <button id="themeBtn" class="icon-btn" title="Change Theme">
+                    <svg class="icon" viewBox="0 0 24 24"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0L12 2.69z"></path></svg>
+                </button>
+                <button id="logoutBtn" class="btn btn-secondary">Logout</button>
+            </div>
+        </header>
+        <main class="main-content">
+            <aside class="sidebar">
+                <div class="sidebar-header">
+                    <h2>History</h2>
+                </div>
+                <div id="historyList" class="history-list"></div>
+            </aside>
+            <section class="main-area">
+                <div class="input-section">
+                     <div id="globalError" class="alert-box hidden"></div>
+                    <textarea id="articlesInput" placeholder="Paste one or more articles here, separated by a line of '==='..."></textarea>
+                    <div class="main-actions">
+                        <button id="submitBtn" class="btn btn-primary">
+                            <span id="submitBtnIconContainer">
+                                <svg class="icon" viewBox="0 0 24 24"><path d="M12 5v14m-7 8h14"></path></svg>
+                            </span>
+                            <span id="submitBtnText">Analyze & Save</span>
+                        </button>
+                        <button id="clearBtn" class="btn btn-secondary">Clear Current</button>
+                    </div>
+                </div>
+                <div class="articles-display">
+                    <div id="articlesContainer" class="articles-container"></div>
+                    <div id="articlesPlaceholder" class="placeholder">
+                         <svg class="icon" viewBox="0 0 24 24"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><line x1="10" y1="9" x2="8" y2="9"></line></svg>
+                        <h2>Ready to Summarize</h2>
+                        <p>Paste articles in the box above or select a session from your history.</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Login Screen -->
+    <div id="loginScreen" class="overlay">
+        <div class="modal-box">
+            <div class="modal-header"><h2>Welcome</h2></div>
+            <div class="modal-body">
+                <div id="loginError" class="alert-box hidden"></div>
+                <div class="form-group">
+                    <label for="googleApiKey">Google AI API Key</label>
+                    <input type="password" id="googleApiKey" required>
+                </div>
+                <div class="form-group">
+                    <label for="githubToken">GitHub Token (for History)</label>
+                    <input type="password" id="githubToken" required>
+                </div>
+                <button id="loginBtn" class="btn btn-primary">
+                    <span id="loginBtnText">Save & Continue</span>
+                     <svg id="loginSpinner" class="icon animate-spin hidden" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg>
+                </button>
+            </div>
+            <div class="modal-footer">
+                <p>A GitHub token with 'gist' scope is required to save your history. <a href="https://github.com/settings/tokens/new?scopes=gist&description=FlashSummarizer" target="_blank" rel="noopener noreferrer">Create one here</a>.</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Theme Modal -->
+    <div id="themeModal" class="overlay hidden">
+        <div class="modal-box">
+            <div class="modal-header"><h2>Choose a Theme</h2></div>
+            <div id="themeGrid" class="modal-body theme-grid"></div>
+        </div>
+    </div>
+
+    <!-- Article Template -->
+    <template id="articleTemplate">
+        <div class="article-card">
+            <button class="article-header">
+                <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                    <h3 class="article-title" style="text-align: left; padding-right: 1rem; flex: 1;"></h3>
+                    <div style="display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0;">
+                        <div class="loader-icon hidden">
+                           <svg class="icon animate-spin" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg>
+                        </div>
+                        <div class="chevron-icon">
+                            <svg class="icon" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"></path></svg>
+                        </div>
+                    </div>
+                </div>
+            </button>
+            <div class="article-content-wrapper hidden">
+                <div class="summary-container"></div>
+                <details>
+                    <summary>View Full Article</summary>
+                    <div class="full-article-box"></div>
+                </details>
+            </div>
+        </div>
+    </template>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const GIST_FILENAME = 'flash_summarizer_history.json';
+            const GIST_DESCRIPTION = 'Flash Summarizer Pro History';
+            const UNTITLED_PLACEHOLDER = 'UNTITLED_ARTICLE_NEEDS_GENERATION';
+
+            const dom = {
+                appContainer: document.getElementById('appContainer'),
+                loginScreen: document.getElementById('loginScreen'),
+                googleApiKeyInput: document.getElementById('googleApiKey'),
+                githubTokenInput: document.getElementById('githubToken'),
+                loginBtn: document.getElementById('loginBtn'),
+                loginBtnText: document.getElementById('loginBtnText'),
+                loginSpinner: document.getElementById('loginSpinner'),
+                loginError: document.getElementById('loginError'),
+                globalError: document.getElementById('globalError'),
+                logoutBtn: document.getElementById('logoutBtn'),
+                themeBtn: document.getElementById('themeBtn'),
+                themeModal: document.getElementById('themeModal'),
+                themeGrid: document.getElementById('themeGrid'),
+                historyList: document.getElementById('historyList'),
+                articlesInput: document.getElementById('articlesInput'),
+                submitBtn: document.getElementById('submitBtn'),
+                submitBtnIconContainer: document.getElementById('submitBtnIconContainer'),
+                submitBtnText: document.getElementById('submitBtnText'),
+                clearBtn: document.getElementById('clearBtn'),
+                articlesContainer: document.getElementById('articlesContainer'),
+                articlesPlaceholder: document.getElementById('articlesPlaceholder'),
+                html: document.documentElement
+            };
+
+            let state = {
+                googleApiKey: null, githubToken: null, gistId: null, history: [],
+                currentArticles: [], activeHistoryId: null, isProcessing: false, expandedArticles: new Set(),
+            };
+            
+            const themes = [
+                { id: 'theme-dusk', color: '#1f2937' }, { id: 'theme-light', color: '#f9fafb' },
+                { id: 'theme-forest', color: '#292524' }, { id: 'theme-rose', color: '#26233a' },
+                { id: 'theme-ocean', color: '#121c33' }
+            ];
+
+            function initializeApp() {
+                loadTheme();
+                renderThemeModal();
+                const savedGoogleKey = localStorage.getItem('googleApiKey');
+                const savedGithubToken = localStorage.getItem('githubToken');
+
+                if (savedGoogleKey && savedGithubToken) {
+                    state.googleApiKey = savedGoogleKey;
+                    state.githubToken = savedGithubToken;
+                    dom.appContainer.classList.remove('hidden');
+                    dom.loginScreen.classList.add('hidden');
+                    loadDataFromGist();
+                } else {
+                    dom.loginScreen.classList.remove('hidden');
+                }
+                setupEventListeners();
+            }
+
+            function setupEventListeners() {
+                console.log('Setting up event listeners');
+                dom.loginBtn.addEventListener('click', handleLogin);
+                dom.logoutBtn.addEventListener('click', handleLogout);
+                dom.themeBtn.addEventListener('click', () => dom.themeModal.classList.remove('hidden'));
+                dom.themeModal.addEventListener('click', (e) => { if (e.target === dom.themeModal) dom.themeModal.classList.add('hidden'); });
+                dom.submitBtn.addEventListener('click', handleSubmit);
+                dom.clearBtn.addEventListener('click', clearCurrentView);
+                
+                // Add event listener for article clicks with debugging
+                dom.articlesContainer.addEventListener('click', (e) => {
+                    console.log('Click detected on articles container', e.target);
+                    handleArticleClick(e);
+                });
+                
+                dom.historyList.addEventListener('click', handleHistoryClick);
+                console.log('Event listeners set up complete');
+            }
+
+            async function handleLogin(e) {
+                e.preventDefault();
+                setButtonLoading(dom.loginBtn, true, dom.loginBtnText, dom.loginSpinner);
+                hideError('loginError');
+                const googleKey = dom.googleApiKeyInput.value.trim();
+                const githubToken = dom.githubTokenInput.value.trim();
+
+                try {
+                    await Promise.all([
+                        fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${googleKey}`).then(res => { if (!res.ok) throw new Error('Invalid Google API Key.'); }),
+                        fetch('https://api.github.com/user', { headers: { 'Authorization': `token ${githubToken}` } }).then(res => { if (!res.ok) throw new Error('Invalid GitHub Token.'); })
+                    ]);
+
+                    state.googleApiKey = googleKey; state.githubToken = githubToken;
+                    localStorage.setItem('googleApiKey', googleKey); localStorage.setItem('githubToken', githubToken);
+                    
+                    dom.appContainer.classList.remove('hidden'); dom.loginScreen.classList.add('hidden');
+                    await loadDataFromGist();
+                } catch (error) {
+                    showError(error.message, 'loginError');
+                } finally {
+                    setButtonLoading(dom.loginBtn, false, dom.loginBtnText, dom.loginSpinner);
+                }
+            }
+
+            function handleLogout() {
+                localStorage.clear();
+                window.location.reload();
+            }
+            
+            async function loadDataFromGist() {
+                try {
+                    const response = await fetch('https://api.github.com/gists', { headers: { 'Authorization': `token ${state.githubToken}` } });
+                    if (!response.ok) throw new Error('Could not fetch Gists.');
+                    const gists = await response.json();
+                    const existingGist = gists.find(g => g.files && g.files[GIST_FILENAME]);
+
+                    if (existingGist) {
+                        state.gistId = existingGist.id;
+                        const fileUrl = existingGist.files[GIST_FILENAME].raw_url + `?t=${Date.now()}`;
+                        const gistContentResponse = await fetch(fileUrl);
+                        const gistData = await gistContentResponse.json();
+                        state.history = gistData.history || [];
+                    } else {
+                        state.history = [];
+                    }
+                    renderHistory();
+                    updatePlaceholder();
+                } catch (error) {
+                    showError("Could not load history from Gist. It may be empty or there's a network issue.", 'globalError');
+                }
+            }
+            
+            async function saveDataToGist() {
+                const dataToSave = { history: state.history };
+                const headers = { 'Authorization': `token ${state.githubToken}`, 'Content-Type': 'application/json', 'Accept': 'application/vnd.github+json' };
+                const body = JSON.stringify({ files: { [GIST_FILENAME]: { content: JSON.stringify(dataToSave, null, 2) } } });
+                const url = state.gistId ? `https://api.github.com/gists/${state.gistId}` : 'https://api.github.com/gists';
+                const method = state.gistId ? 'PATCH' : 'POST';
+                const requestBody = state.gistId ? body : JSON.stringify({ description: GIST_DESCRIPTION, public: false, ...JSON.parse(body) });
+
+                try {
+                    const response = await fetch(url, { method, headers, body: requestBody });
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.message || 'Failed to save to Gist.');
+                    }
+                    if (method === 'POST') {
+                        const newGist = await response.json();
+                        state.gistId = newGist.id;
+                    }
+                } catch (error) {
+                    console.error("Gist save error:", error);
+                    showError(error.message, 'globalError');
+                }
+            }
+
+            // --- ** CORE LOGIC (FIXED) ** ---
+            function parseArticles(text) {
+                let articles = [];
+                
+                console.log('Input text length:', text.length);
+                console.log('Contains long equals?', text.includes('================'));
+                console.log('Contains short equals?', text.includes('==='));
+                
+                // Check for different types of separators
+                let sections = [];
+                
+                // Try long equals separator first (like in the example)
+                if (text.includes('================')) {
+                    sections = text.split(/\n\s*={10,}\s*\n/);
+                    console.log('Split by long equals, sections found:', sections.length);
+                }
+                // Try short equals separator
+                else if (text.includes('===')) {
+                    sections = text.split(/\n\s*={3,9}\s*\n/);
+                    console.log('Split by short equals, sections found:', sections.length);
+                }
+                
+                // Filter empty sections
+                sections = sections.filter(section => section.trim().length > 0);
+                console.log('After filtering empty sections:', sections.length);
+                
+                // If we found sections using separators
+                if (sections.length > 1) {
+                    sections.forEach((section, index) => {
+                        console.log(`Section ${index} length:`, section.trim().length);
+                        const article = createArticleFromText(section.trim(), index);
+                        if (article) {
+                            console.log(`Article ${index} created successfully`);
+                            articles.push(article);
+                        } else {
+                            console.log(`Article ${index} was null`);
+                        }
+                    });
+                } else {
+                    // No separator found or only one section, treat the entire text as a single article
+                    console.log('Treating as single article, text length:', text.trim().length);
+                    const singleArticle = createArticleFromText(text.trim(), 0);
+                    if (singleArticle) {
+                        console.log('Single article created successfully');
+                        articles.push(singleArticle);
+                    } else {
+                        console.log('Single article was null');
+                    }
+                }
+                
+                console.log('Final articles count:', articles.length);
+                return articles;
+            }
+
+            function createArticleFromText(text, index) {
+                if (!text || text.trim().length < 50) return null; // Minimum content length reduced
+
+                const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+                let title = UNTITLED_PLACEHOLDER;
+                let content = text;
+
+                const junkTitlePatterns = [
+                    /^\|/, /^the economist$/i, /our daily political update/i, /figure of the day/i,
+                    /^all of our/i, /subscribers can sign up/i, /for more expert analysis/i,
+                    /stay on top of/i, /from monday to thursday/i, /photo: /i, /getty images/i,
+                    /^a view from elsewhere/i, /the us in brief/i
+                ];
+
+                // Try to find a good title from the first few lines
+                for (let i = 0; i < Math.min(lines.length, 10); i++) {
+                    const line = lines[i];
+                    const isAllCaps = line === line.toUpperCase() && line.length > 1 && !line.match(/\d/);
+                    const isLikelyJunk = junkTitlePatterns.some(p => p.test(line));
+
+                    if (line.length > 10 && line.length < 150 && !isAllCaps && !isLikelyJunk) {
+                        title = line;
+                        const remainingContent = lines.slice(i + 1).join('\n');
+                        // Only use remaining content if it's substantial enough
+                        if (remainingContent.length > 30) {
+                            content = remainingContent;
+                        }
+                        break;
+                    }
+                }
+
+                return {
+                    id: Date.now() + index, // Remove random component to keep it as integer
+                    title,
+                    content,
+                    summary: null,
+                    isLoading: true,
+                    error: null
+                };
+            }
+
+            async function generateBatchSummaries(articlesToSummarize) {
+                let batchPrompt = `For each article below, provide a response based on the instructions.
+Always start your response for an article with "--- ARTICLE [number] ---".
+
+INSTRUCTIONS:
+1. Generate a 5-bullet-point summary in markdown list format.
+2. If an article's provided title is "${UNTITLED_PLACEHOLDER}", you MUST FIRST generate a new, concise title. Format it as: "GENERATED_TITLE: [Your new title]". Then, on a new line, provide the 5-point summary.
+
+ARTICLES:\n\n`;
+                articlesToSummarize.forEach((article, index) => {
+                    batchPrompt += `--- ARTICLE ${index + 1} ---\nTITLE: ${article.title}\nCONTENT: ${article.content.substring(0, 8000)}\n\n`;
+                });
+
+                const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${state.googleApiKey}`;
+                
+                const response = await fetch(API_URL, {
+                    method: "POST", headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: batchPrompt }] }],
+                        generationConfig: { temperature: 0.2, maxOutputTokens: 8192 }
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error.message || `API request failed: ${response.status}`);
+                }
+                const data = await response.json();
+                if (!data.candidates || !data.candidates[0].content) {
+                    throw new Error("AI response was empty or invalid.");
+                }
+
+                return data.candidates[0].content.parts[0].text;
+            }
+            
+            function processApiResponse(responseText, articles) {
+                const sections = responseText.split(/--- ARTICLE \d+ ---/).slice(1);
+                
+                if (sections.length !== articles.length) {
+                    console.error("AI response mismatch: Expected", articles.length, "sections, but got", sections.length, ". Raw response:", responseText);
+                }
+
+                articles.forEach((article, index) => {
+                    const section = sections[index] ? sections[index].trim() : '';
+                    if (!section) {
+                        article.error = "No summary was returned for this article.";
+                    } else {
+                        const lines = section.split('\n');
+                        if (lines[0].startsWith('GENERATED_TITLE:')) {
+                            article.title = lines[0].replace('GENERATED_TITLE:', '').trim();
+                            article.summary = lines.slice(1).join('\n').trim();
+                        } else {
+                            article.summary = section;
+                        }
+                    }
+                    article.isLoading = false;
+                });
+            }
+
+            async function handleSubmit() {
+                console.log('Submit button clicked');
+                console.log('Textarea element:', dom.articlesInput);
+                console.log('Raw textarea value:', dom.articlesInput.value);
+                console.log('Trimmed textarea value length:', dom.articlesInput.value.trim().length);
+                
+                if (!dom.articlesInput.value.trim()) {
+                    showError('Please paste some text to analyze.', 'globalError');
+                    return;
+                }
+                
+                setProcessing(true);
+                clearCurrentView();
+                hideError('globalError');
+
+                try {
+                    const inputText = dom.articlesInput.value;
+                    console.log('Input text being passed to parseArticles:', inputText.substring(0, 200) + '...');
+                    
+                    state.currentArticles = parseArticles(inputText);
+                    
+                    // Additional safety check to ensure no null articles
+                    state.currentArticles = state.currentArticles.filter(article => 
+                        article !== null && article !== undefined && article.content && article.content.trim().length > 0
+                    );
+                    
+                    if (state.currentArticles.length === 0) {
+                        showError('No valid articles found. Text must be at least 50 characters long.', 'globalError');
+                        setProcessing(false);
+                        return;
+                    }
+                    
+                    renderArticles();
+
+                    const apiResponseText = await generateBatchSummaries(state.currentArticles);
+                    processApiResponse(apiResponseText, state.currentArticles);
+                    renderArticles();
+
+                    const newHistoryEntry = { id: Date.now(), timestamp: new Date().toISOString(), articles: state.currentArticles };
+                    state.history.unshift(newHistoryEntry);
+                    state.activeHistoryId = newHistoryEntry.id;
+                    await saveDataToGist();
+                    renderHistory();
+
+                } catch (error) {
+                    console.error('Error details:', error);
+                    showError('Error processing articles: ' + error.message, 'globalError');
+                    // Safely handle error state for articles
+                    if (state.currentArticles && Array.isArray(state.currentArticles)) {
+                        state.currentArticles.forEach(article => {
+                            if (article) {
+                                article.isLoading = false;
+                                article.error = error.message;
+                            }
+                        });
+                        renderArticles();
+                    }
+                }
+                
+                setProcessing(false);
+            }
+
+            // --- Rendering ---
+            function renderHistory() {
+                dom.historyList.innerHTML = '';
+                state.history.forEach(entry => {
+                    const el = document.createElement('button');
+                    el.className = `history-item ${entry.id === state.activeHistoryId ? 'active' : ''}`;
+                    el.dataset.id = entry.id;
+                    el.innerHTML = `<div class="timestamp">${new Date(entry.timestamp).toLocaleString()}</div><div class="article-count">${entry.articles.length} article(s)</div>`;
+                    dom.historyList.appendChild(el);
+                });
+            }
+            
+            function renderArticles() {
+                dom.articlesContainer.innerHTML = '';
+                state.currentArticles.forEach(article => dom.articlesContainer.appendChild(createArticleElement(article)));
+                updatePlaceholder();
+            }
+
+            function renderArticle(article) {
+                const existingEl = document.querySelector(`.article-card[data-id='${article.id}']`);
+                if (existingEl) existingEl.replaceWith(createArticleElement(article));
+            }
+
+            function createArticleElement(article) {
+                console.log('Creating article element for:', article.title);
+                const template = document.getElementById('articleTemplate').content.cloneNode(true);
+                const card = template.querySelector('.article-card');
+                card.dataset.id = article.id;
+                template.querySelector('.article-title').textContent = article.title;
+                template.querySelector('.full-article-box').textContent = article.content;
+
+                const loaderIcon = template.querySelector('.loader-icon');
+                const summaryContainer = template.querySelector('.summary-container');
+                const chevronIcon = template.querySelector('.chevron-icon');
+                const contentWrapper = template.querySelector('.article-content-wrapper');
+                
+                if (article.isLoading) {
+                    loaderIcon.classList.remove('hidden');
+                    summaryContainer.innerHTML = `<p>Generating summary...</p>`;
+                } else if (article.error) {
+                    summaryContainer.innerHTML = `<div class="alert-box"><strong>Error:</strong> ${article.error}</div>`;
+                } else if (article.summary) {
+                    loaderIcon.classList.add('hidden');
+                    const summaryHtml = article.summary.split('\n').map(line => line.trim()).filter(line => line).map(line => `<li>${line.replace(/^[\*•-]\s*/, '')}</li>`).join('');
+                    summaryContainer.innerHTML = `<h4>5-Point Summary</h4><div class="summary-box"><ul>${summaryHtml}</ul></div>`;
+                }
+
+                // Handle expanded state
+                if (state.expandedArticles.has(article.id)) {
+                    console.log('Article should be expanded:', article.id);
+                    contentWrapper.classList.remove('hidden');
+                    chevronIcon.classList.add('expanded');
+                } else {
+                    console.log('Article should be collapsed:', article.id);
+                    contentWrapper.classList.add('hidden');
+                    chevronIcon.classList.remove('expanded');
+                }
+                
+                console.log('Article element created successfully');
+                return template;
+            }
+            
+            function renderThemeModal() {
+                dom.themeGrid.innerHTML = '';
+                themes.forEach(theme => {
+                    const swatch = document.createElement('div');
+                    swatch.className = 'theme-swatch';
+                    swatch.style.backgroundColor = theme.color;
+                    swatch.dataset.theme = theme.id;
+                    if (localStorage.getItem('flashSummarizerTheme') === theme.id) swatch.classList.add('active');
+                    swatch.addEventListener('click', () => {
+                        applyTheme(theme.id);
+                        document.querySelectorAll('.theme-swatch').forEach(s => s.classList.remove('active'));
+                        swatch.classList.add('active');
+                    });
+                    dom.themeGrid.appendChild(swatch);
+                });
+            }
+            // --- UI Interaction & Helpers ---
+            function handleArticleClick(e) {
+                console.log('Article click detected', e.target);
+                const header = e.target.closest('.article-header');
+                console.log('Found header:', header);
+                if (!header) return;
+                
+                const card = header.closest('.article-card');
+                console.log('Found card:', card);
+                const articleIdStr = card.dataset.id;
+                console.log('Article ID string:', articleIdStr);
+                
+                // Handle both integer and float IDs
+                const articleId = articleIdStr.includes('.') ? parseFloat(articleIdStr) : parseInt(articleIdStr, 10);
+                console.log('Parsed Article ID:', articleId);
+                
+                console.log('Current articles:', state.currentArticles.map(a => ({id: a.id, title: a.title})));
+                
+                if (state.expandedArticles.has(articleId)) {
+                    console.log('Collapsing article', articleId);
+                    state.expandedArticles.delete(articleId);
+                } else {
+                    console.log('Expanding article', articleId);
+                    state.expandedArticles.add(articleId);
+                }
+                
+                const article = state.currentArticles.find(a => a.id === articleId);
+                console.log('Found article:', article);
+                if (article) {
+                    renderArticle(article);
+                } else {
+                    console.error('Article not found! Looking for ID:', articleId, 'in articles:', state.currentArticles.map(a => a.id));
+                }
+            }
+            
+            function handleHistoryClick(e) {
+                const item = e.target.closest('.history-item');
+                if (!item) return;
+                const id = parseInt(item.dataset.id, 10);
+                const historyEntry = state.history.find(entry => entry.id === id);
+                if (historyEntry) {
+                    state.currentArticles = historyEntry.articles; state.activeHistoryId = id;
+                    dom.articlesInput.value = ''; state.expandedArticles.clear();
+                    renderArticles(); renderHistory();
+                }
+            }
+            
+            function clearCurrentView() {
+                console.log('clearCurrentView called');
+                state.currentArticles = []; 
+                state.activeHistoryId = null;
+                // Don't clear the textarea input here - that should only happen when user explicitly wants to clear
+                renderArticles(); 
+                renderHistory();
+            }
+
+            function setProcessing(isLoading) {
+                state.isProcessing = isLoading;
+                dom.submitBtn.disabled = isLoading;
+                dom.articlesInput.disabled = isLoading;
+                const iconContainer = dom.submitBtnIconContainer;
+                const textEl = dom.submitBtnText;
+                
+                if(isLoading) {
+                    iconContainer.innerHTML = `<svg class="icon animate-spin" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg>`;
+                    textEl.textContent = 'Processing...';
+                } else {
+                    iconContainer.innerHTML = `<svg class="icon" viewBox="0 0 24 24"><path d="M12 5v14m-7 8h14"></path></svg>`;
+                    textEl.textContent = 'Analyze & Save';
+                }
+            }
+            
+            function setButtonLoading(btn, isLoading, textEl, spinnerEl) {
+                btn.disabled = isLoading;
+                if (textEl) textEl.classList.toggle('hidden', isLoading);
+                if (spinnerEl) spinnerEl.classList.toggle('hidden', !isLoading);
+            }
+
+            function showError(message, elementId) {
+                const el = document.getElementById(elementId);
+                el.innerHTML = `<span>${message}</span>`;
+                el.classList.remove('hidden');
+            }
+
+            function hideError(elementId) {
+                document.getElementById(elementId).classList.add('hidden');
+            }
+            
+            function updatePlaceholder() {
+                dom.articlesPlaceholder.classList.toggle('hidden', state.currentArticles.length > 0);
+            }
+            
+            function applyTheme(themeId) {
+                dom.html.className = themeId;
+                localStorage.setItem('flashSummarizerTheme', themeId);
+            }
+
+            function loadTheme() {
+                const savedTheme = localStorage.getItem('flashSummarizerTheme') || 'theme-dusk';
+                applyTheme(savedTheme);
+            }
+
+            initializeApp();
+        });
+    </script>
+</body>
+</html>
