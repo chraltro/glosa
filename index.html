@@ -88,7 +88,6 @@
         .article-header:hover { background-color: var(--bg-tertiary); }
         .article-title { font-size: 1.125rem; font-weight: 600; color: var(--text-primary); margin: 0; }
         
-        /* NEW: Article URL styling */
         .article-url { 
             display: inline-flex; 
             align-items: center; 
@@ -222,7 +221,7 @@
             <section class="main-area">
                 <div class="input-section">
                      <div id="globalError" class="alert-box hidden"></div>
-                    <textarea id="articlesInput" placeholder="Paste one or more articles here, separated by a line of '==='..."></textarea>
+                    <textarea id="articlesInput" placeholder="Paste one or more articles here, separated by a line of '===================='..."></textarea>
                     <div class="main-actions">
                         <button id="submitBtn" class="btn btn-primary">
                             <span id="submitBtnIconContainer">
@@ -315,6 +314,7 @@
             const GIST_FILENAME = 'flash_summarizer_history.json';
             const GIST_DESCRIPTION = 'Flash Summarizer Pro History';
             const UNTITLED_PLACEHOLDER = 'UNTITLED_ARTICLE_NEEDS_GENERATION';
+            const BATCH_SIZE = 5; // <-- The new batch size constant
 
             const dom = {
                 appContainer: document.getElementById('appContainer'),
@@ -371,22 +371,14 @@
             }
 
             function setupEventListeners() {
-                console.log('Setting up event listeners');
                 dom.loginBtn.addEventListener('click', handleLogin);
                 dom.logoutBtn.addEventListener('click', handleLogout);
                 dom.themeBtn.addEventListener('click', () => dom.themeModal.classList.remove('hidden'));
                 dom.themeModal.addEventListener('click', (e) => { if (e.target === dom.themeModal) dom.themeModal.classList.add('hidden'); });
                 dom.submitBtn.addEventListener('click', handleSubmit);
                 dom.clearBtn.addEventListener('click', clearCurrentView);
-                
-                // Add event listener for article clicks with debugging
-                dom.articlesContainer.addEventListener('click', (e) => {
-                    console.log('Click detected on articles container', e.target);
-                    handleArticleClick(e);
-                });
-                
+                dom.articlesContainer.addEventListener('click', handleArticleClick);
                 dom.historyList.addEventListener('click', handleHistoryClick);
-                console.log('Event listeners set up complete');
             }
 
             async function handleLogin(e) {
@@ -466,119 +458,74 @@
                 }
             }
 
-            // --- ** CORE LOGIC (UPDATED FOR URLs) ** ---
             function parseArticles(text) {
                 let articles = [];
-                
-                console.log('Input text length:', text.length);
-                console.log('Contains long equals?', text.includes('================'));
-                console.log('Contains short equals?', text.includes('==='));
-                
-                // Check for different types of separators
-                let sections = [];
-                
-                // Try long equals separator first (like in the example)
-                if (text.includes('================')) {
-                    sections = text.split(/\n\s*={10,}\s*\n/);
-                    console.log('Split by long equals, sections found:', sections.length);
-                }
-                // Try short equals separator
-                else if (text.includes('===')) {
-                    sections = text.split(/\n\s*={3,9}\s*\n/);
-                    console.log('Split by short equals, sections found:', sections.length);
-                }
-                
-                // Filter empty sections
-                sections = sections.filter(section => section.trim().length > 0);
-                console.log('After filtering empty sections:', sections.length);
-                
-                // If we found sections using separators
-                if (sections.length > 1) {
-                    sections.forEach((section, index) => {
-                        console.log(`Section ${index} length:`, section.trim().length);
-                        const article = createArticleFromText(section.trim(), index);
-                        if (article) {
-                            console.log(`Article ${index} created successfully`);
-                            articles.push(article);
-                        } else {
-                            console.log(`Article ${index} was null`);
-                        }
-                    });
-                } else {
-                    // No separator found or only one section, treat the entire text as a single article
-                    console.log('Treating as single article, text length:', text.trim().length);
-                    const singleArticle = createArticleFromText(text.trim(), 0);
-                    if (singleArticle) {
-                        console.log('Single article created successfully');
-                        articles.push(singleArticle);
-                    } else {
-                        console.log('Single article was null');
+                const separatorRegex = /\n\s*={10,}\s*\n/;
+                let sections = text.split(separatorRegex).filter(section => section.trim().length > 0);
+
+                sections.forEach((section, index) => {
+                    const article = createArticleFromText(section.trim(), index);
+                    if (article) {
+                        articles.push(article);
                     }
-                }
-                
-                console.log('Final articles count:', articles.length);
+                });
                 return articles;
             }
 
             function createArticleFromText(text, index) {
-                if (!text || text.trim().length < 50) return null; // Minimum content length reduced
+                if (!text || text.trim().length < 50) return null;
 
-                const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+                const lines = text.split('\n');
                 let title = UNTITLED_PLACEHOLDER;
-                let content = text;
                 let url = null;
+                let contentStartIndex = 0;
 
-                // NEW: Check for URL at the beginning
-                const urlMatch = lines[0] && lines[0].match(/^URL:\s*(.+)$/);
-                if (urlMatch) {
-                    url = urlMatch[1].trim();
-                    // Remove URL line and any separator lines from content
-                    let contentStartIndex = 1;
-                    while (contentStartIndex < lines.length && 
-                           (lines[contentStartIndex].match(/^-{5,}$/) || lines[contentStartIndex] === '')) {
-                        contentStartIndex++;
-                    }
-                    lines.splice(0, contentStartIndex);
-                    content = lines.join('\n');
-                }
-
-                const junkTitlePatterns = [
-                    /^\|/, /^the economist$/i, /our daily political update/i, /figure of the day/i,
-                    /^all of our/i, /subscribers can sign up/i, /for more expert analysis/i,
-                    /stay on top of/i, /from monday to thursday/i, /photo: /i, /getty images/i,
-                    /^a view from elsewhere/i, /the us in brief/i
-                ];
-
-                // Try to find a good title from the first few lines
-                for (let i = 0; i < Math.min(lines.length, 10); i++) {
-                    const line = lines[i];
-                    if (!line) continue;
-                    
-                    const isAllCaps = line === line.toUpperCase() && line.length > 1 && !line.match(/\d/);
-                    const isLikelyJunk = junkTitlePatterns.some(p => p.test(line));
-
-                    if (line.length > 10 && line.length < 150 && !isAllCaps && !isLikelyJunk) {
-                        title = line;
-                        const remainingContent = lines.slice(i + 1).join('\n');
-                        // Only use remaining content if it's substantial enough
-                        if (remainingContent.length > 30) {
-                            content = remainingContent;
+                for (let i = 0; i < lines.length; i++) {
+                    const line = lines[i].trim();
+                    if (line.toUpperCase().startsWith('URL:')) {
+                        url = line.substring(4).trim();
+                    } else if (line.toUpperCase().startsWith('TITLE:')) {
+                        title = line.substring(6).trim();
+                        contentStartIndex = i + 1;
+                        while (contentStartIndex < lines.length && lines[contentStartIndex].trim() === '') {
+                            contentStartIndex++;
                         }
                         break;
                     }
                 }
+                
+                if (title === UNTITLED_PLACEHOLDER) {
+                    const junkHeaderPatterns = [/^article \d+\/\d+/i, /^-{5,}$/i, /^_{5,}$/i];
+                    while (contentStartIndex < lines.length && (junkHeaderPatterns.some(p => p.test(lines[contentStartIndex].trim())) || lines[contentStartIndex].trim() === '')) {
+                        contentStartIndex++;
+                    }
+                }
+
+                let content = lines.slice(contentStartIndex).join('\n').trim();
+                const endBoilerplateSnippets = ["For subscribers only:", "Subscribers to The Economist can sign up", "__"];
+                for (const snippet of endBoilerplateSnippets) {
+                    const pos = content.indexOf(snippet);
+                    if (pos !== -1) content = content.substring(0, pos).trim();
+                }
+                content = content.replace(/■\s*$/, '').trim();
+
+                if (title === UNTITLED_PLACEHOLDER) {
+                    const contentLines = content.split('\n').filter(l => l.trim());
+                     for (let i = 0; i < Math.min(contentLines.length, 5); i++) {
+                        const line = contentLines[i].trim();
+                        if (line.length > 10 && line.length < 150 && line !== line.toUpperCase()) {
+                            title = line;
+                            break;
+                        }
+                    }
+                }
 
                 return {
-                    id: Date.now() + index, // Remove random component to keep it as integer
-                    title,
-                    content,
-                    url, // NEW: Store the URL
-                    summary: null,
-                    isLoading: true,
-                    error: null
+                    id: Date.now() + index, title, content, url,
+                    summary: null, isLoading: true, error: null
                 };
             }
-
+            
             async function generateBatchSummaries(articlesToSummarize) {
                 let batchPrompt = `For each article below, provide a response based on the instructions.
 Always start your response for an article with "--- ARTICLE [number] ---".
@@ -592,7 +539,7 @@ ARTICLES:\n\n`;
                     batchPrompt += `--- ARTICLE ${index + 1} ---\nTITLE: ${article.title}\nCONTENT: ${article.content.substring(0, 8000)}\n\n`;
                 });
 
-                const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${state.googleApiKey}`;
+                const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${state.googleApiKey}`;
                 
                 const response = await fetch(API_URL, {
                     method: "POST", headers: { "Content-Type": "application/json" },
@@ -617,10 +564,6 @@ ARTICLES:\n\n`;
             function processApiResponse(responseText, articles) {
                 const sections = responseText.split(/--- ARTICLE \d+ ---/).slice(1);
                 
-                if (sections.length !== articles.length) {
-                    console.error("AI response mismatch: Expected", articles.length, "sections, but got", sections.length, ". Raw response:", responseText);
-                }
-
                 articles.forEach((article, index) => {
                     const section = sections[index] ? sections[index].trim() : '';
                     if (!section) {
@@ -638,12 +581,8 @@ ARTICLES:\n\n`;
                 });
             }
 
+            // --- ** CORE LOGIC (UPDATED WITH BATCHING) ** ---
             async function handleSubmit() {
-                console.log('Submit button clicked');
-                console.log('Textarea element:', dom.articlesInput);
-                console.log('Raw textarea value:', dom.articlesInput.value);
-                console.log('Trimmed textarea value length:', dom.articlesInput.value.trim().length);
-                
                 if (!dom.articlesInput.value.trim()) {
                     showError('Please paste some text to analyze.', 'globalError');
                     return;
@@ -655,27 +594,33 @@ ARTICLES:\n\n`;
 
                 try {
                     const inputText = dom.articlesInput.value;
-                    console.log('Input text being passed to parseArticles:', inputText.substring(0, 200) + '...');
-                    
                     state.currentArticles = parseArticles(inputText);
                     
-                    // Additional safety check to ensure no null articles
-                    state.currentArticles = state.currentArticles.filter(article => 
-                        article !== null && article !== undefined && article.content && article.content.trim().length > 0
-                    );
-                    
                     if (state.currentArticles.length === 0) {
-                        showError('No valid articles found. Text must be at least 50 characters long.', 'globalError');
+                        showError('No valid articles found. Ensure articles are separated correctly and have enough content.', 'globalError');
                         setProcessing(false);
                         return;
                     }
                     
+                    // Initially, render all articles in their loading state.
                     renderArticles();
 
-                    const apiResponseText = await generateBatchSummaries(state.currentArticles);
-                    processApiResponse(apiResponseText, state.currentArticles);
-                    renderArticles();
+                    // *** NEW BATCHING LOGIC ***
+                    // Process articles in chunks to avoid API token limits.
+                    for (let i = 0; i < state.currentArticles.length; i += BATCH_SIZE) {
+                        const batch = state.currentArticles.slice(i, i + BATCH_SIZE);
+                        console.log(`Processing batch ${Math.floor(i / BATCH_SIZE) + 1}: articles ${i + 1} to ${i + batch.length}`);
 
+                        const apiResponseText = await generateBatchSummaries(batch);
+                        processApiResponse(apiResponseText, batch);
+                        
+                        // Re-render the articles after each batch completes.
+                        // This will update the UI progressively.
+                        renderArticles(); 
+                    }
+                    // *** END OF BATCHING LOGIC ***
+
+                    // Now that all batches are processed, save the complete session to history.
                     const newHistoryEntry = { id: Date.now(), timestamp: new Date().toISOString(), articles: state.currentArticles };
                     state.history.unshift(newHistoryEntry);
                     state.activeHistoryId = newHistoryEntry.id;
@@ -683,14 +628,13 @@ ARTICLES:\n\n`;
                     renderHistory();
 
                 } catch (error) {
-                    console.error('Error details:', error);
+                    console.error('Error during batch processing:', error);
                     showError('Error processing articles: ' + error.message, 'globalError');
-                    // Safely handle error state for articles
                     if (state.currentArticles && Array.isArray(state.currentArticles)) {
                         state.currentArticles.forEach(article => {
-                            if (article) {
+                            if (article && article.isLoading) { // Only mark failing ones
                                 article.isLoading = false;
-                                article.error = error.message;
+                                article.error = "Processing failed for this batch. " + error.message;
                             }
                         });
                         renderArticles();
@@ -724,14 +668,12 @@ ARTICLES:\n\n`;
             }
 
             function createArticleElement(article) {
-                console.log('Creating article element for:', article.title);
                 const template = document.getElementById('articleTemplate').content.cloneNode(true);
                 const card = template.querySelector('.article-card');
                 card.dataset.id = article.id;
                 template.querySelector('.article-title').textContent = article.title;
                 template.querySelector('.full-article-box').textContent = article.content;
 
-                // NEW: Handle URL display
                 const urlElement = template.querySelector('.article-url');
                 if (article.url) {
                     urlElement.href = article.url;
@@ -743,11 +685,7 @@ ARTICLES:\n\n`;
                         urlText.textContent = 'Source';
                     }
                     urlElement.classList.remove('hidden');
-                    
-                    // Prevent header click when clicking on URL
-                    urlElement.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                    });
+                    urlElement.addEventListener('click', (e) => e.stopPropagation());
                 } else {
                     urlElement.classList.add('hidden');
                 }
@@ -768,18 +706,14 @@ ARTICLES:\n\n`;
                     summaryContainer.innerHTML = `<h4>5-Point Summary</h4><div class="summary-box"><ul>${summaryHtml}</ul></div>`;
                 }
 
-                // Handle expanded state
                 if (state.expandedArticles.has(article.id)) {
-                    console.log('Article should be expanded:', article.id);
                     contentWrapper.classList.remove('hidden');
                     chevronIcon.classList.add('expanded');
                 } else {
-                    console.log('Article should be collapsed:', article.id);
                     contentWrapper.classList.add('hidden');
                     chevronIcon.classList.remove('expanded');
                 }
                 
-                console.log('Article element created successfully');
                 return template;
             }
             
@@ -801,36 +735,22 @@ ARTICLES:\n\n`;
             }
             // --- UI Interaction & Helpers ---
             function handleArticleClick(e) {
-                console.log('Article click detected', e.target);
                 const header = e.target.closest('.article-header');
-                console.log('Found header:', header);
                 if (!header) return;
                 
                 const card = header.closest('.article-card');
-                console.log('Found card:', card);
                 const articleIdStr = card.dataset.id;
-                console.log('Article ID string:', articleIdStr);
-                
-                // Handle both integer and float IDs
-                const articleId = articleIdStr.includes('.') ? parseFloat(articleIdStr) : parseInt(articleIdStr, 10);
-                console.log('Parsed Article ID:', articleId);
-                
-                console.log('Current articles:', state.currentArticles.map(a => ({id: a.id, title: a.title})));
+                const articleId = parseInt(articleIdStr, 10);
                 
                 if (state.expandedArticles.has(articleId)) {
-                    console.log('Collapsing article', articleId);
                     state.expandedArticles.delete(articleId);
                 } else {
-                    console.log('Expanding article', articleId);
                     state.expandedArticles.add(articleId);
                 }
                 
                 const article = state.currentArticles.find(a => a.id === articleId);
-                console.log('Found article:', article);
                 if (article) {
                     renderArticle(article);
-                } else {
-                    console.error('Article not found! Looking for ID:', articleId, 'in articles:', state.currentArticles.map(a => a.id));
                 }
             }
             
@@ -840,17 +760,18 @@ ARTICLES:\n\n`;
                 const id = parseInt(item.dataset.id, 10);
                 const historyEntry = state.history.find(entry => entry.id === id);
                 if (historyEntry) {
-                    state.currentArticles = historyEntry.articles; state.activeHistoryId = id;
-                    dom.articlesInput.value = ''; state.expandedArticles.clear();
-                    renderArticles(); renderHistory();
+                    state.currentArticles = historyEntry.articles.map(a => ({...a})); // Create copies
+                    state.activeHistoryId = id;
+                    dom.articlesInput.value = ''; 
+                    state.expandedArticles.clear();
+                    renderArticles(); 
+                    renderHistory();
                 }
             }
             
             function clearCurrentView() {
-                console.log('clearCurrentView called');
                 state.currentArticles = []; 
                 state.activeHistoryId = null;
-                // Don't clear the textarea input here - that should only happen when user explicitly wants to clear
                 renderArticles(); 
                 renderHistory();
             }
