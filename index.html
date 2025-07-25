@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" class="theme-dusk">
+<html lang="en" class="theme-sleek">
 
 <head>
     <meta charset="UTF-8">
@@ -30,6 +30,7 @@
         .theme-rose { --primary: #e11d48; --primary-dark: #be123c; --bg-primary: #1f1d2b; --bg-secondary: #26233a; --bg-secondary-rgb: 38, 35, 58; --bg-tertiary: #3e3a59; --bg-quaternary: #4a4867; --text-primary: #e0def4; --text-secondary: #908caa; --text-tertiary: #6e6a86; --border: #3e3a59; --border-light: #4a4867; }
         .theme-dusk { --primary: #4f46e5; --primary-dark: #4338ca; --bg-primary: #111827; --bg-secondary: #1f2937; --bg-secondary-rgb: 31, 41, 55; --bg-tertiary: #374151; --bg-quaternary: #4b5563; --text-primary: #f3f4f6; --text-secondary: #d1d5db; --text-tertiary: #9ca3af; --border: #374151; --border-light: #4b5563; }
         .theme-ocean { --primary: #0ea5e9; --primary-dark: #0284c7; --bg-primary: #0c1427; --bg-secondary: #121c33; --bg-secondary-rgb: 18, 28, 51; --bg-tertiary: #21304f; --bg-quaternary: #2e4166; --text-primary: #eaf3ff; --text-secondary: #a8bfe0; --text-tertiary: #7a9cc6; --border: #21304f; --border-light: #2e4166; }
+        .theme-sleek { --primary: #0d6efd; --primary-dark: #0b5ed7; --bg-primary: #f8f9fa; --bg-secondary: #ffffff; --bg-secondary-rgb: 255, 255, 255; --bg-tertiary: #e9ecef; --bg-quaternary: #dee2e6; --text-primary: #212529; --text-secondary: #495057; --text-tertiary: #6c757d; --border: #dee2e6; --border-light: #ced4da; }
         
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html, body { height: auto; overflow: auto; }
@@ -42,9 +43,9 @@
 
         /* --- Layout --- */
         .app-container { display: flex; flex-direction: column; min-height: 100vh; }
-        .app-header { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.5rem; background: rgba(var(--bg-secondary-rgb), 0.9); backdrop-filter: var(--blur); border-bottom: 1px solid var(--border); z-index: 10; }
+        .app-header { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.5rem; background: rgba(var(--bg-secondary-rgb), 0.9); backdrop-filter: var(--blur); border-bottom: 1px solid var(--border); box-shadow: var(--shadow-lg); z-index: 10; }
         .header-brand { display: flex; align-items: center; gap: 0.75rem; }
-        .header-brand h1 { font-size: 1.5rem; font-weight: 600; }
+        .header-brand h1 { font-size: 1.75rem; font-weight: 600; }
         .header-actions { display: flex; align-items: center; gap: 1rem; }
         .main-content { display: flex; flex: 1; }
         
@@ -123,8 +124,8 @@
         
         /* --- General Components --- */
         .btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.6rem 1.2rem; border-radius: var(--radius); font-weight: 600; cursor: pointer; transition: var(--transition-fast); border: 1px solid transparent; }
-        .btn-primary { background-color: var(--primary); color: white; border-color: var(--primary); }
-        .btn-primary:hover:not(:disabled) { background-color: var(--primary-dark); transform: translateY(-1px); box-shadow: var(--shadow-lg); }
+        .btn-primary { background-image: linear-gradient(to bottom right, var(--primary), var(--primary-dark)); color: white; border-color: var(--primary-dark); }
+        .btn-primary:hover:not(:disabled) { filter: brightness(1.05); transform: translateY(-1px); box-shadow: var(--shadow-lg); }
         .btn-secondary { background-color: transparent; color: var(--text-secondary); border-color: var(--border); }
         .btn-secondary:hover:not(:disabled) { background-color: var(--bg-tertiary); color: var(--text-primary); }
         .btn:disabled { opacity: 0.5; cursor: not-allowed; }
@@ -347,6 +348,7 @@
             };
             
             const themes = [
+                { id: 'theme-sleek', color: '#f8f9fa' },
                 { id: 'theme-dusk', color: '#1f2937' }, { id: 'theme-light', color: '#f9fafb' },
                 { id: 'theme-forest', color: '#292524' }, { id: 'theme-rose', color: '#26233a' },
                 { id: 'theme-ocean', color: '#121c33' }
@@ -818,7 +820,7 @@ ARTICLES:\n\n`;
             }
 
             function loadTheme() {
-                const savedTheme = localStorage.getItem('flashSummarizerTheme') || 'theme-dusk';
+                const savedTheme = localStorage.getItem('flashSummarizerTheme') || 'theme-sleek';
                 applyTheme(savedTheme);
             }
 
