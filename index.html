@@ -200,7 +200,7 @@
                     <div class="main-actions">
                         <button id="submitBtn" class="btn btn-primary">
                             <span id="submitBtnIconContainer">
-                                <svg class="icon" viewBox="0 0 24 24"><path d="M12 5v14m-7 8h14"></path></svg>
+                                <svg class="icon" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"></path></svg>
                             </span>
                             <span id="submitBtnText">Analyze & Save</span>
                         </button>
@@ -795,7 +795,7 @@ ARTICLES:\n\n`;
                     iconContainer.innerHTML = `<svg class="icon animate-spin" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg>`;
                     textEl.textContent = 'Processing...';
                 } else {
-                    iconContainer.innerHTML = `<svg class="icon" viewBox="0 0 24 24"><path d="M12 5v14m-7 8h14"></path></svg>`;
+                    iconContainer.innerHTML = `<svg class="icon" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"></path></svg>`;
                     textEl.textContent = 'Analyze & Save';
                 }
             }
