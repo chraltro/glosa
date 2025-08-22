@@ -205,6 +205,7 @@
                 <h1>Flash Summarizer Pro</h1>
             </div>
             <div class="header-actions">
+                <button id="expandAllBtn" class="btn btn-secondary hidden">Expand All</button>
                 <button id="themeBtn" class="icon-btn" title="Change Theme">
                     <svg class="icon" viewBox="0 0 24 24"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0L12 2.69z"></path></svg>
                 </button>
@@ -327,6 +328,7 @@
                 loginError: document.getElementById('loginError'),
                 globalError: document.getElementById('globalError'),
                 logoutBtn: document.getElementById('logoutBtn'),
+                expandAllBtn: document.getElementById('expandAllBtn'),
                 themeBtn: document.getElementById('themeBtn'),
                 themeModal: document.getElementById('themeModal'),
                 themeGrid: document.getElementById('themeGrid'),
@@ -344,6 +346,7 @@
             let state = {
                 googleApiKey: null, githubToken: null, gistId: null, history: [],
                 currentArticles: [], activeHistoryId: null, isProcessing: false, expandedArticles: new Set(),
+                allExpanded: false,
             };
             
             const themes = [
@@ -373,6 +376,7 @@
             function setupEventListeners() {
                 dom.loginBtn.addEventListener('click', handleLogin);
                 dom.logoutBtn.addEventListener('click', handleLogout);
+                dom.expandAllBtn.addEventListener('click', handleExpandAll);
                 dom.themeBtn.addEventListener('click', () => dom.themeModal.classList.remove('hidden'));
                 dom.themeModal.addEventListener('click', (e) => { if (e.target === dom.themeModal) dom.themeModal.classList.add('hidden'); });
                 dom.submitBtn.addEventListener('click', handleSubmit);
@@ -660,6 +664,14 @@ ARTICLES:\n\n`;
                 dom.articlesContainer.innerHTML = '';
                 state.currentArticles.forEach(article => dom.articlesContainer.appendChild(createArticleElement(article)));
                 updatePlaceholder();
+                updateExpandAllButton();
+                
+                // Show/hide expand all button based on whether we have articles
+                if (state.currentArticles.length > 0) {
+                    dom.expandAllBtn.classList.remove('hidden');
+                } else {
+                    dom.expandAllBtn.classList.add('hidden');
+                }
             }
 
             function renderArticle(article) {
@@ -734,6 +746,21 @@ ARTICLES:\n\n`;
                 });
             }
             // --- UI Interaction & Helpers ---
+            function handleExpandAll() {
+                if (state.allExpanded) {
+                    state.expandedArticles.clear();
+                    state.allExpanded = false;
+                    dom.expandAllBtn.textContent = 'Expand All';
+                } else {
+                    state.currentArticles.forEach(article => {
+                        state.expandedArticles.add(article.id);
+                    });
+                    state.allExpanded = true;
+                    dom.expandAllBtn.textContent = 'Collapse All';
+                }
+                renderArticles();
+            }
+            
             function handleArticleClick(e) {
                 const header = e.target.closest('.article-header');
                 if (!header) return;
@@ -742,16 +769,56 @@ ARTICLES:\n\n`;
                 const articleIdStr = card.dataset.id;
                 const articleId = parseInt(articleIdStr, 10);
                 
-                if (state.expandedArticles.has(articleId)) {
-                    state.expandedArticles.delete(articleId);
-                } else {
-                    state.expandedArticles.add(articleId);
+                const wasExpanded = state.expandedArticles.has(articleId);
+                const cardElements = Array.from(dom.articlesContainer.children);
+                const currentIndex = cardElements.findIndex(el => el.dataset.id === articleIdStr);
+                
+                if (currentIndex !== -1) {
+                    if (wasExpanded) {
+                        // Collapse the entire row
+                        collapseCardsInRow(currentIndex, cardElements);
+                    } else {
+                        // Expand the entire row
+                        expandCardsInRow(currentIndex, cardElements);
+                    }
                 }
                 
-                const article = state.currentArticles.find(a => a.id === articleId);
-                if (article) {
-                    renderArticle(article);
+                updateExpandAllButton();
+                renderArticles();
+            }
+            
+            function expandCardsInRow(clickedIndex, cardElements) {
+                const containerWidth = dom.articlesContainer.offsetWidth;
+                const cardWidth = 400 + 24; // minmax(400px, 1fr) + gap
+                const cardsPerRow = Math.floor(containerWidth / cardWidth) || 1;
+                
+                const rowStartIndex = Math.floor(clickedIndex / cardsPerRow) * cardsPerRow;
+                const rowEndIndex = Math.min(rowStartIndex + cardsPerRow, cardElements.length);
+                
+                for (let i = rowStartIndex; i < rowEndIndex; i++) {
+                    const cardId = parseInt(cardElements[i].dataset.id, 10);
+                    state.expandedArticles.add(cardId);
                 }
+            }
+            
+            function collapseCardsInRow(clickedIndex, cardElements) {
+                const containerWidth = dom.articlesContainer.offsetWidth;
+                const cardWidth = 400 + 24; // minmax(400px, 1fr) + gap
+                const cardsPerRow = Math.floor(containerWidth / cardWidth) || 1;
+                
+                const rowStartIndex = Math.floor(clickedIndex / cardsPerRow) * cardsPerRow;
+                const rowEndIndex = Math.min(rowStartIndex + cardsPerRow, cardElements.length);
+                
+                for (let i = rowStartIndex; i < rowEndIndex; i++) {
+                    const cardId = parseInt(cardElements[i].dataset.id, 10);
+                    state.expandedArticles.delete(cardId);
+                }
+            }
+            
+            function updateExpandAllButton() {
+                const allExpanded = state.currentArticles.every(article => state.expandedArticles.has(article.id));
+                state.allExpanded = allExpanded;
+                dom.expandAllBtn.textContent = allExpanded ? 'Collapse All' : 'Expand All';
             }
             
             function handleHistoryClick(e) {
@@ -772,6 +839,8 @@ ARTICLES:\n\n`;
             function clearCurrentView() {
                 state.currentArticles = []; 
                 state.activeHistoryId = null;
+                state.expandedArticles.clear();
+                state.allExpanded = false;
                 renderArticles(); 
                 renderHistory();
             }
