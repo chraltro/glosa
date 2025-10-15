@@ -1,15 +1,15 @@
 <!DOCTYPE html>
-<html lang="en" class="theme-dusk">
+<html lang="en" class="theme-glosa">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Flash Summarizer Pro</title>
+    <title>Glosa</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEzIDJMMy4xNCA4LjVMMi41IDEwTDMgMTFIMTJMMTEgMTlMMjEgMTFIMTJMMTMgMloiIGZpbGw9IiM2MzY2ZjEiLz4KPHN2Zz4K" />
+    <link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEzIDJMMy4xNCA4LjVMMi41IDEwTDMgMTFIMTJMMTEgMTlMMjEgMTFIMTJMMTMgMloiIGZpbGw9IiNENEE3MyIvPgo8c3ZnPgo" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
-    <meta name="theme-color" content="#4f46e5">
+    <meta name="theme-color" content="#D4A373">
     <style>
         :root {
             --primary: #6366f1; --primary-dark: #4f46e5; --primary-light: #8b5cf6;
@@ -30,6 +30,8 @@
         .theme-rose { --primary: #e11d48; --primary-dark: #be123c; --bg-primary: #1f1d2b; --bg-secondary: #26233a; --bg-secondary-rgb: 38, 35, 58; --bg-tertiary: #3e3a59; --bg-quaternary: #4a4867; --text-primary: #e0def4; --text-secondary: #908caa; --text-tertiary: #6e6a86; --border: #3e3a59; --border-light: #4a4867; }
         .theme-dusk { --primary: #4f46e5; --primary-dark: #4338ca; --bg-primary: #111827; --bg-secondary: #1f2937; --bg-secondary-rgb: 31, 41, 55; --bg-tertiary: #374151; --bg-quaternary: #4b5563; --text-primary: #f3f4f6; --text-secondary: #d1d5db; --text-tertiary: #9ca3af; --border: #374151; --border-light: #4b5563; }
         .theme-ocean { --primary: #0ea5e9; --primary-dark: #0284c7; --bg-primary: #0c1427; --bg-secondary: #121c33; --bg-secondary-rgb: 18, 28, 51; --bg-tertiary: #21304f; --bg-quaternary: #2e4166; --text-primary: #eaf3ff; --text-secondary: #a8bfe0; --text-tertiary: #7a9cc6; --border: #21304f; --border-light: #2e4166; }
+        .theme-glosa { --primary: #D4A373; --primary-dark: #B88A5C; --primary-light: #E0C090; --bg-primary: #111827; --bg-secondary: #1f2937; --bg-secondary-rgb: 31, 41, 55; --bg-tertiary: #374151; --bg-quaternary: #4b5563; --text-primary: #f3f4f6; --text-secondary: #d1d5db; --text-tertiary: #9ca3af; --border: #374151; --border-light: #4b5563; }
+        .theme-glosa-light { --primary: #D4A373; --primary-dark: #B88A5C; --primary-light: #E0C090; --bg-primary: #ffffff; --bg-secondary: #f9fafb; --bg-secondary-rgb: 249, 250, 251; --bg-tertiary: #f3f4f6; --bg-quaternary: #e5e7eb; --text-primary: #111827; --text-secondary: #374151; --text-tertiary: #6b7280; --border: #e5e7eb; --border-light: #d1d5db; }
         
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html, body { height: auto; overflow: auto; }
@@ -201,8 +203,8 @@
     <div id="appContainer" class="app-container hidden">
         <header class="app-header">
             <div class="header-brand">
-                <svg class="icon" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path></svg>
-                <h1>Flash Summarizer Pro</h1>
+                <img src="logo.svg" alt="Glosa logo" style="height: 1.5em;" />
+                <h1>Glosa</h1>
             </div>
             <div class="header-actions">
                 <button id="expandAllBtn" class="btn btn-secondary hidden">Expand All</button>
@@ -265,7 +267,7 @@
                 </button>
             </div>
             <div class="modal-footer">
-                <p>A GitHub token with 'gist' scope is required to save your history. <a href="https://github.com/settings/tokens/new?scopes=gist&description=FlashSummarizer" target="_blank" rel="noopener noreferrer">Create one here</a>.</p>
+                <p>A GitHub token with 'gist' scope is required to save your history. <a href="https://github.com/settings/tokens/new?scopes=gist&description=Glosa" target="_blank" rel="noopener noreferrer">Create one here</a>.</p>
             </div>
         </div>
     </div>
@@ -313,7 +315,7 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const GIST_FILENAME = 'flash_summarizer_history.json';
-            const GIST_DESCRIPTION = 'Flash Summarizer Pro History';
+            const GIST_DESCRIPTION = 'Glosa History';
             const UNTITLED_PLACEHOLDER = 'UNTITLED_ARTICLE_NEEDS_GENERATION';
             const BATCH_SIZE = 5; // <-- The new batch size constant
 
@@ -350,6 +352,8 @@
             };
             
             const themes = [
+                { id: 'theme-glosa', color: '#D4A373' },
+                { id: 'theme-glosa-light', color: '#f9fafb' },
                 { id: 'theme-dusk', color: '#1f2937' }, { id: 'theme-light', color: '#f9fafb' },
                 { id: 'theme-forest', color: '#292524' }, { id: 'theme-rose', color: '#26233a' },
                 { id: 'theme-ocean', color: '#121c33' }
@@ -736,7 +740,7 @@ ARTICLES:\n\n`;
                     swatch.className = 'theme-swatch';
                     swatch.style.backgroundColor = theme.color;
                     swatch.dataset.theme = theme.id;
-                    if (localStorage.getItem('flashSummarizerTheme') === theme.id) swatch.classList.add('active');
+                    if (localStorage.getItem('glosaTheme') === theme.id) swatch.classList.add('active');
                     swatch.addEventListener('click', () => {
                         applyTheme(theme.id);
                         document.querySelectorAll('.theme-swatch').forEach(s => s.classList.remove('active'));
@@ -883,11 +887,11 @@ ARTICLES:\n\n`;
             
             function applyTheme(themeId) {
                 dom.html.className = themeId;
-                localStorage.setItem('flashSummarizerTheme', themeId);
+                localStorage.setItem('glosaTheme', themeId);
             }
 
             function loadTheme() {
-                const savedTheme = localStorage.getItem('flashSummarizerTheme') || 'theme-dusk';
+                const savedTheme = localStorage.getItem('glosaTheme') || 'theme-glosa';
                 applyTheme(savedTheme);
             }
 
