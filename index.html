@@ -5,12 +5,30 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Glosa</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="icon" type="image/svg+xml" href="logo.svg" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
     <meta name="theme-color" content="#D4A373">
+    <!-- Preconnect to external domains -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://api.github.com">
+    <link rel="preconnect" href="https://generativelanguage.googleapis.com">
+    <!-- Shared Norrøn theme -->
+    <link rel="stylesheet" href="shared/theme.css">
+    <!-- Async font loading for better performance -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono&display=swap"
+        rel="stylesheet"
+        media="print"
+        onload="this.media='all'">
+    <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono&display=swap" rel="stylesheet"></noscript>
     <style>
+        :root {
+            /* Glosa-specific accent color - Bronze Amber */
+            --app-accent: #D4A373;
+            --app-accent-dark: #B88A5C;
+            --app-accent-light: #E0C090;
+            --app-accent-rgb: 212, 163, 115;
+        }
         :root {
             --primary: #6366f1; --primary-dark: #4f46e5; --primary-light: #8b5cf6;
             --success: #10b981; --danger: #ef4444;
