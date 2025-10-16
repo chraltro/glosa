@@ -174,41 +174,71 @@
         .theme-swatch.active { border-color: var(--primary); }
         
         /* --- Mobile --- */
+        /* --- Wayfinder Logo Link --- */
+        .wayfinder-link {
+            position: fixed;
+            bottom: 1rem;
+            right: 1rem;
+            z-index: 1000;
+            opacity: 0.6;
+            transition: var(--transition-fast);
+        }
+        .wayfinder-link:hover {
+            opacity: 1;
+            transform: scale(1.1);
+        }
+        .wayfinder-link img {
+            width: 48px;
+            height: 48px;
+            display: block;
+        }
+
         @media (max-width: 768px) {
-            .app-header { 
+            .wayfinder-link {
+                width: 40px;
+                height: 40px;
+                bottom: 0.75rem;
+                right: 0.75rem;
+            }
+            .wayfinder-link img {
+                width: 40px;
+                height: 40px;
+            }
+
+            .app-header {
                 position: fixed;
                 top: 0;
                 left: 0;
                 right: 0;
                 z-index: 100;
-                padding: 0.75rem; 
+                padding: 0.75rem;
             }
-            
-            .main-content { 
-                flex-direction: column; 
+
+            .main-content {
+                flex-direction: column;
                 margin-top: 70px; /* Space for fixed header */
             }
-            
-            .sidebar { 
-                width: 100%; 
-                height: auto; 
-                border-right: none; 
-                border-bottom: 1px solid var(--border); 
+
+            .sidebar {
+                width: 100%;
+                height: auto;
+                border-right: none;
+                border-bottom: 1px solid var(--border);
             }
-            .history-list { 
-                display: flex; 
-                overflow-x: auto; 
-                padding-bottom: 0.5rem; 
+            .history-list {
+                display: flex;
+                overflow-x: auto;
+                padding-bottom: 0.5rem;
             }
-            .history-item { 
-                flex-shrink: 0; 
+            .history-item {
+                flex-shrink: 0;
                 margin-right: 0.5rem;
             }
-            
-            .articles-container { 
-                grid-template-columns: 1fr; 
+
+            .articles-container {
+                grid-template-columns: 1fr;
             }
-            
+
             .header-brand h1 { font-size: 1.25rem; }
             .icon-btn span { display: none; }
             .input-section, .articles-display { padding: 1rem; }
@@ -217,6 +247,11 @@
 </head>
 
 <body>
+    <!-- Wayfinder Logo Link -->
+    <a href="../wayfinder/index.html" class="wayfinder-link" title="Back to Wayfinder">
+        <img src="../wayfinder/wayfinder_logo.svg" alt="Wayfinder" />
+    </a>
+
     <!-- App Structure -->
     <div id="appContainer" class="app-container hidden">
         <header class="app-header">
