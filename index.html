@@ -263,6 +263,9 @@
             </div>
             <div class="header-actions">
                 <button id="expandAllBtn" class="btn btn-secondary hidden">Expand All</button>
+                <button id="settingsBtn" class="icon-btn" title="Settings">
+                    <svg class="icon" viewBox="0 0 24 24"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"></path><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                </button>
                 <button id="themeBtn" class="icon-btn" title="Change Theme">
                     <svg class="icon" viewBox="0 0 24 24"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0L12 2.69z"></path></svg>
                 </button>
@@ -370,6 +373,39 @@
         </div>
     </div>
 
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="overlay hidden">
+        <div class="modal-box">
+            <div class="modal-header"><h2>Settings</h2></div>
+            <div class="modal-body">
+                <div id="settingsError" class="alert-box hidden"></div>
+                <div id="settingsStatus" class="hidden" style="text-align: center; padding: 1rem; color: var(--text-secondary);"></div>
+
+                <form id="settingsForm" class="form-group">
+                    <div class="form-group">
+                        <label for="settingsGeminiKey">Gemini API Key</label>
+                        <input type="password" id="settingsGeminiKey" placeholder="Enter your Gemini API key" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="settingsGithubToken">GitHub Personal Access Token (Optional)</label>
+                        <input type="password" id="settingsGithubToken" placeholder="Enter your GitHub token (for syncing history)">
+                        <small style="color: var(--text-tertiary); display: block; margin-top: 0.5rem;">
+                            Need a token? <a href="https://github.com/settings/tokens/new?scopes=gist&description=Glosa" target="_blank" rel="noopener" style="color: var(--link-color);">Create one here</a> with "gist" scope.
+                        </small>
+                    </div>
+                    <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+                        <button type="submit" id="settingsSaveBtn" class="btn btn-primary" style="flex: 1;">
+                            Save Keys
+                        </button>
+                        <button type="button" id="settingsCancelBtn" class="btn btn-secondary" style="flex: 1;">
+                            Cancel
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <!-- Article Template -->
     <template id="articleTemplate">
         <div class="article-card">
@@ -431,6 +467,15 @@
                 globalError: document.getElementById('globalError'),
                 logoutBtn: document.getElementById('logoutBtn'),
                 expandAllBtn: document.getElementById('expandAllBtn'),
+                settingsBtn: document.getElementById('settingsBtn'),
+                settingsModal: document.getElementById('settingsModal'),
+                settingsForm: document.getElementById('settingsForm'),
+                settingsGeminiKey: document.getElementById('settingsGeminiKey'),
+                settingsGithubToken: document.getElementById('settingsGithubToken'),
+                settingsSaveBtn: document.getElementById('settingsSaveBtn'),
+                settingsCancelBtn: document.getElementById('settingsCancelBtn'),
+                settingsError: document.getElementById('settingsError'),
+                settingsStatus: document.getElementById('settingsStatus'),
                 themeBtn: document.getElementById('themeBtn'),
                 themeModal: document.getElementById('themeModal'),
                 themeGrid: document.getElementById('themeGrid'),
@@ -493,6 +538,10 @@
                 // App event listeners
                 dom.logoutBtn.addEventListener('click', handleLogout);
                 dom.expandAllBtn.addEventListener('click', handleExpandAll);
+                dom.settingsBtn.addEventListener('click', openSettings);
+                dom.settingsModal.addEventListener('click', (e) => { if (e.target === dom.settingsModal) closeSettings(); });
+                dom.settingsCancelBtn.addEventListener('click', closeSettings);
+                dom.settingsForm.addEventListener('submit', handleSettingsSave);
                 dom.themeBtn.addEventListener('click', () => dom.themeModal.classList.remove('hidden'));
                 dom.themeModal.addEventListener('click', (e) => { if (e.target === dom.themeModal) dom.themeModal.classList.add('hidden'); });
                 dom.submitBtn.addEventListener('click', handleSubmit);
@@ -607,6 +656,72 @@
                     dom.loadingSpinner.classList.add('hidden');
                     dom.loginStatus.classList.add('hidden');
                     dom.manualEntryForm.classList.remove('hidden');
+                }
+            }
+
+            function openSettings() {
+                // Pre-fill current values
+                dom.settingsGeminiKey.value = state.googleApiKey || '';
+                dom.settingsGithubToken.value = state.githubToken || '';
+                dom.settingsModal.classList.remove('hidden');
+                hideError('settingsError');
+                dom.settingsStatus.classList.add('hidden');
+            }
+
+            function closeSettings() {
+                dom.settingsModal.classList.add('hidden');
+            }
+
+            async function handleSettingsSave(e) {
+                e.preventDefault();
+
+                const geminiKey = dom.settingsGeminiKey.value.trim();
+                const githubToken = dom.settingsGithubToken.value.trim();
+
+                if (!geminiKey) {
+                    showError('Gemini API key is required', 'settingsError');
+                    return;
+                }
+
+                try {
+                    dom.settingsStatus.classList.remove('hidden');
+                    dom.settingsStatus.textContent = 'Validating keys...';
+                    hideError('settingsError');
+
+                    // Validate Gemini key
+                    const testResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${geminiKey}`);
+                    if (!testResponse.ok) throw new Error('Invalid Gemini API key');
+
+                    dom.settingsStatus.textContent = 'Saving keys...';
+
+                    // Save to Firebase if user is signed in
+                    const auth = getCurrentAuth();
+                    if (auth.googleUser) {
+                        await saveKeys(geminiKey, githubToken || null);
+                        dom.settingsStatus.textContent = 'Keys saved and synced to Firebase!';
+                    } else {
+                        dom.settingsStatus.textContent = 'Keys saved locally';
+                    }
+
+                    // Always save to localStorage
+                    localStorage.setItem('googleApiKey', geminiKey);
+                    if (githubToken) {
+                        localStorage.setItem('githubToken', githubToken);
+                    } else {
+                        localStorage.removeItem('githubToken');
+                    }
+
+                    // Update state
+                    state.googleApiKey = geminiKey;
+                    state.githubToken = githubToken;
+
+                    setTimeout(() => {
+                        closeSettings();
+                        dom.settingsStatus.classList.add('hidden');
+                    }, 1500);
+                } catch (error) {
+                    showError(error.message, 'settingsError');
+                    dom.settingsStatus.classList.add('hidden');
                 }
             }
 
