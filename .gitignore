@@ -1,0 +1,22 @@
+# Glosa (Article Summarizer) - Project-specific .gitignore
+
+# Dependencies
+node_modules/
+
+# Environment files
+.env.local
+.env.*.local
+!.env.local.example
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
