@@ -342,8 +342,13 @@
                         <label for="googleApiKey">Gemini API Key</label>
                         <input type="password" id="googleApiKey" placeholder="Enter your Gemini API key">
                     </div>
-                    <button id="manualSubmitBtn" class="btn btn-primary">
-                        <span>Save & Continue</span>
+                    <div class="form-group">
+                        <label for="githubToken">GitHub Personal Access Token</label>
+                        <input type="password" id="githubToken" placeholder="Enter your GitHub token (for syncing history)">
+                    </div>
+                    <button id="loginBtn" class="btn btn-primary">
+                        <span id="loginBtnText">Save & Continue</span>
+                        <svg id="loginSpinner" class="icon animate-spin hidden" style="width: 1.25rem; height: 1.25rem;" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg>
                     </button>
                 </div>
 
@@ -412,6 +417,10 @@
                 loginBtn: document.getElementById('loginBtn'),
                 loginBtnText: document.getElementById('loginBtnText'),
                 loginSpinner: document.getElementById('loginSpinner'),
+                showManualBtn: document.getElementById('showManualBtn'),
+                manualEntryForm: document.getElementById('manualEntryForm'),
+                manualEntryLink: document.getElementById('manualEntryLink'),
+                oauthFlow: document.getElementById('oauthFlow'),
                 loginError: document.getElementById('loginError'),
                 globalError: document.getElementById('globalError'),
                 logoutBtn: document.getElementById('logoutBtn'),
@@ -458,12 +467,15 @@
                     loadDataFromGist();
                 } else {
                     dom.loginScreen.classList.remove('hidden');
+                    // Show manual entry link
+                    dom.manualEntryLink.classList.remove('hidden');
                 }
                 setupEventListeners();
             }
 
             function setupEventListeners() {
-                dom.loginBtn.addEventListener('click', handleLogin);
+                if (dom.loginBtn) dom.loginBtn.addEventListener('click', handleLogin);
+                if (dom.showManualBtn) dom.showManualBtn.addEventListener('click', showManualEntry);
                 dom.logoutBtn.addEventListener('click', handleLogout);
                 dom.expandAllBtn.addEventListener('click', handleExpandAll);
                 dom.themeBtn.addEventListener('click', () => dom.themeModal.classList.remove('hidden'));
@@ -472,6 +484,12 @@
                 dom.clearBtn.addEventListener('click', clearCurrentView);
                 dom.articlesContainer.addEventListener('click', handleArticleClick);
                 dom.historyList.addEventListener('click', handleHistoryClick);
+            }
+
+            function showManualEntry() {
+                dom.oauthFlow.classList.add('hidden');
+                dom.manualEntryLink.classList.add('hidden');
+                dom.manualEntryForm.classList.remove('hidden');
             }
 
             async function handleLogin(e) {
