@@ -1,29 +1,19 @@
 /**
  * Glosa Authentication Module
- * Handles Google Sign-In + GitHub Personal Access Token
+ * Handles Google Sign-In via Firebase and stores encrypted keys in Firestore
+ * Uses the same Firebase backend as Ansuz
  */
 
-import { initGoogleSignIn, signInWithGoogle, getCurrentGoogleUser } from '../shared/google-auth.js';
-import { retrieveSyncedKeys, saveSyncedKeys } from '../shared/key-sync.js';
-
-let authCallbacks = {
-    onSuccess: null,
-    onError: null
-};
+import { initFirebase, signInWithGoogle, getCurrentUser, retrieveKeys as fbRetrieveKeys, saveKeys as fbSaveKeys } from './lib/firebase-auth.js';
 
 export async function initAuth() {
     try {
-        await initGoogleSignIn();
+        await initFirebase();
         return true;
     } catch (error) {
-        console.error('Failed to initialize Google auth:', error);
+        console.error('Failed to initialize Firebase:', error);
         return false;
     }
-}
-
-export function setAuthCallbacks(onSuccess, onError) {
-    authCallbacks.onSuccess = onSuccess;
-    authCallbacks.onError = onError;
 }
 
 export async function handleGoogleSignIn() {
@@ -35,9 +25,9 @@ export async function handleGoogleSignIn() {
     }
 }
 
-export async function retrieveKeys(githubToken) {
+export async function retrieveKeys() {
     try {
-        const keys = await retrieveSyncedKeys(githubToken);
+        const keys = await fbRetrieveKeys();
         return keys;
     } catch (error) {
         console.error('Failed to retrieve keys:', error);
@@ -47,9 +37,9 @@ export async function retrieveKeys(githubToken) {
 
 export async function saveKeys(geminiKey, githubToken) {
     try {
-        await saveSyncedKeys({
+        await fbSaveKeys({
             geminiKey,
-            githubToken
+            githubToken: githubToken || null
         });
         return true;
     } catch (error) {
@@ -58,13 +48,8 @@ export async function saveKeys(geminiKey, githubToken) {
     }
 }
 
-export function isAuthenticated(githubToken) {
-    const googleUser = getCurrentGoogleUser();
-    return !!(googleUser && githubToken);
-}
-
 export function getCurrentAuth() {
     return {
-        googleUser: getCurrentGoogleUser()
+        googleUser: getCurrentUser()
     };
 }
