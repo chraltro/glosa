@@ -61,6 +61,7 @@
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         .animate-spin { animation: spin 1s linear infinite; }
         .hidden { display: none !important; }
+        .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border-width: 0; }
 
         /* --- Layout --- */
         .app-container { display: flex; flex-direction: column; min-height: 100vh; }
@@ -287,6 +288,9 @@
             <aside class="sidebar">
                 <div class="sidebar-header">
                     <h2>History</h2>
+                    <button id="clearHistoryBtn" class="icon-btn" title="Clear all history" style="color: var(--danger);">
+                        <svg class="icon" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                    </button>
                 </div>
                 <div style="padding: 0.5rem 1rem; border-bottom: 1px solid var(--border);">
                     <input
@@ -300,19 +304,27 @@
             </aside>
             <section class="main-area">
                 <div class="input-section">
-                     <div id="globalError" class="alert-box hidden"></div>
-                    <textarea id="articlesInput" placeholder="Paste one or more articles here, separated by a line of '===================='..."></textarea>
+                     <div id="globalError" class="alert-box hidden" role="alert"></div>
+                    <textarea
+                        id="articlesInput"
+                        placeholder="Paste one or more articles here, separated by a line of '===================='...."
+                        aria-label="Article input"
+                        aria-describedby="inputHelp"
+                    ></textarea>
+                    <div id="inputHelp" class="sr-only">
+                        Paste one or more articles. Separate multiple articles with a line of equals signs. Press Ctrl+Enter to analyze.
+                    </div>
                     <div class="main-actions">
-                        <button id="submitBtn" class="btn btn-primary">
-                            <span id="submitBtnIconContainer">
+                        <button id="submitBtn" class="btn btn-primary" aria-label="Analyze articles and save to history">
+                            <span id="submitBtnIconContainer" aria-hidden="true">
                                 <svg class="icon" viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path></svg>
                             </span>
                             <span id="submitBtnText">Analyze & Save</span>
                         </button>
-                        <button id="clearBtn" class="btn btn-secondary">Clear Current</button>
+                        <button id="clearBtn" class="btn btn-secondary" aria-label="Clear current view">Clear Current</button>
                     </div>
-                    <div id="progressContainer" class="hidden">
-                        <div class="progress-bar-container">
+                    <div id="progressContainer" class="hidden" role="status" aria-live="polite">
+                        <div class="progress-bar-container" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
                             <div id="progressBar" class="progress-bar" style="width: 0%"></div>
                         </div>
                         <div id="progressText" class="progress-text"></div>
@@ -491,6 +503,7 @@
                 githubConnectBtn: document.getElementById('githubConnectBtn'),
                 globalError: document.getElementById('globalError'),
                 logoutBtn: document.getElementById('logoutBtn'),
+                clearHistoryBtn: document.getElementById('clearHistoryBtn'),
                 statsBtn: document.getElementById('statsBtn'),
                 expandAllBtn: document.getElementById('expandAllBtn'),
                 exportBtn: document.getElementById('exportBtn'),
@@ -574,6 +587,7 @@
 
                 // App event listeners
                 dom.logoutBtn.addEventListener('click', handleLogout);
+                dom.clearHistoryBtn.addEventListener('click', confirmClearHistory);
                 dom.statsBtn.addEventListener('click', showStatistics);
                 dom.expandAllBtn.addEventListener('click', handleExpandAll);
                 dom.exportBtn.addEventListener('click', handleExport);
@@ -816,7 +830,46 @@
                 localStorage.clear();
                 window.location.reload();
             }
-            
+
+            function confirmClearHistory() {
+                if (state.history.length === 0) {
+                    showError('No history to clear', 'globalError');
+                    setTimeout(() => hideError('globalError'), 2000);
+                    return;
+                }
+
+                const modal = document.createElement('div');
+                modal.className = 'overlay';
+                modal.innerHTML = `
+                    <div class="modal-box">
+                        <div class="modal-header"><h2>Clear History?</h2></div>
+                        <div class="modal-body">
+                            <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">
+                                Are you sure you want to delete all ${state.history.length} session(s) from your history? This action cannot be undone.
+                            </p>
+                            <div style="display: flex; gap: 1rem;">
+                                <button class="btn btn-secondary" id="cancelClearHistory" style="flex: 1;">Cancel</button>
+                                <button class="btn btn-primary" id="confirmClearHistory" style="flex: 1; background: var(--danger); border-color: var(--danger);">Delete All</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+
+                document.getElementById('cancelClearHistory').addEventListener('click', () => modal.remove());
+                document.getElementById('confirmClearHistory').addEventListener('click', async () => {
+                    modal.remove();
+                    state.history = [];
+                    state.activeHistoryId = null;
+                    await saveDataToGist();
+                    renderHistory();
+                    clearCurrentView();
+                });
+                modal.addEventListener('click', (e) => {
+                    if (e.target === modal) modal.remove();
+                });
+            }
+
             function loadDataFromLocalStorage() {
                 try {
                     const savedHistory = localStorage.getItem('glosaHistory');
@@ -1447,8 +1500,24 @@ ARTICLES:\n\n`;
             }
 
             function loadTheme() {
-                const savedTheme = localStorage.getItem('glosaTheme') || 'theme-glosa';
+                let savedTheme = localStorage.getItem('glosaTheme');
+
+                // Auto-detect theme based on system preference if not set
+                if (!savedTheme) {
+                    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                    savedTheme = prefersDark ? 'theme-glosa' : 'theme-glosa-light';
+                }
+
                 applyTheme(savedTheme);
+
+                // Listen for system theme changes
+                window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+                    // Only auto-switch if user hasn't manually set a theme
+                    if (!localStorage.getItem('glosaTheme')) {
+                        const newTheme = e.matches ? 'theme-glosa' : 'theme-glosa-light';
+                        applyTheme(newTheme);
+                    }
+                });
             }
 
             function handleExport() {
