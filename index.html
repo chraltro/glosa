@@ -93,7 +93,27 @@
         .history-item.active { background: var(--primary); color: white; font-weight: 600; }
         .history-item .timestamp { font-size: 0.875rem; font-weight: 500; margin-bottom: 0.25rem; }
         .history-item .article-count { font-size: 0.75rem; opacity: 0.8; }
-        
+
+        /* --- Tooltip --- */
+        .tooltip { position: fixed; z-index: 1000; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius); padding: 0.75rem; max-width: 300px; box-shadow: var(--shadow-xl); pointer-events: none; opacity: 0; transition: opacity 0.2s ease; }
+        .tooltip.show { opacity: 1; }
+        .tooltip-title { font-weight: 600; color: var(--text-primary); margin-bottom: 0.5rem; font-size: 0.875rem; }
+        .tooltip-preview { font-size: 0.75rem; color: var(--text-secondary); line-height: 1.4; max-height: 100px; overflow: hidden; text-overflow: ellipsis; }
+
+        /* --- Toast Notifications --- */
+        .toast-container { position: fixed; bottom: 2rem; right: 2rem; z-index: 2000; display: flex; flex-direction: column; gap: 0.75rem; max-width: 400px; }
+        .toast { display: flex; align-items: center; gap: 1rem; padding: 1rem 1.25rem; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow-xl); transform: translateX(120%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .toast.show { transform: translateX(0); }
+        .toast-success { border-left: 4px solid var(--success); }
+        .toast-error { border-left: 4px solid var(--danger); }
+        .toast-info { border-left: 4px solid var(--primary); }
+        .toast-content { flex: 1; }
+        .toast-title { font-weight: 600; color: var(--text-primary); margin-bottom: 0.25rem; font-size: 0.875rem; }
+        .toast-message { font-size: 0.75rem; color: var(--text-secondary); }
+        .toast-actions { display: flex; gap: 0.5rem; }
+        .toast-btn { padding: 0.25rem 0.75rem; font-size: 0.75rem; border-radius: var(--radius); border: 1px solid var(--border); background: var(--bg-tertiary); color: var(--text-primary); cursor: pointer; transition: var(--transition-fast); }
+        .toast-btn:hover { background: var(--bg-quaternary); }
+
         /* --- Main Area --- */
         .main-area { flex: 1; display: flex; flex-direction: column; }
         .input-section { padding: 1.5rem; border-bottom: 1px solid var(--border); background: var(--bg-primary); }
@@ -544,6 +564,8 @@
                 isProcessing: false,
                 expandedArticles: new Set(),
                 allExpanded: false,
+                tooltip: null,
+                deletedSessions: [] // For undo functionality
             };
             
             const themes = [
@@ -601,16 +623,29 @@
                 dom.clearBtn.addEventListener('click', clearCurrentView);
                 dom.articlesContainer.addEventListener('click', handleArticleClick);
                 dom.historyList.addEventListener('click', handleHistoryClick);
-                dom.historySearch.addEventListener('input', handleHistorySearch);
+                dom.historySearch.addEventListener('input', (e) => handleHistorySearch(e));
 
                 // Keyboard shortcuts
                 document.addEventListener('keydown', handleKeyboardShortcuts);
             }
 
-            function handleHistorySearch(e) {
+            // Debounce function for performance
+            function debounce(func, wait) {
+                let timeout;
+                return function executedFunction(...args) {
+                    const later = () => {
+                        clearTimeout(timeout);
+                        func(...args);
+                    };
+                    clearTimeout(timeout);
+                    timeout = setTimeout(later, wait);
+                };
+            }
+
+            const handleHistorySearch = debounce((e) => {
                 const searchTerm = e.target.value.toLowerCase();
                 renderHistory(searchTerm);
-            }
+            }, 300);
 
             function handleKeyboardShortcuts(e) {
                 // Ctrl+Enter or Cmd+Enter: Submit/Analyze
@@ -845,7 +880,7 @@
                         <div class="modal-header"><h2>Clear History?</h2></div>
                         <div class="modal-body">
                             <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">
-                                Are you sure you want to delete all ${state.history.length} session(s) from your history? This action cannot be undone.
+                                Are you sure you want to delete all ${state.history.length} session(s) from your history? You can undo this action within 30 seconds.
                             </p>
                             <div style="display: flex; gap: 1rem;">
                                 <button class="btn btn-secondary" id="cancelClearHistory" style="flex: 1;">Cancel</button>
@@ -859,12 +894,152 @@
                 document.getElementById('cancelClearHistory').addEventListener('click', () => modal.remove());
                 document.getElementById('confirmClearHistory').addEventListener('click', async () => {
                     modal.remove();
+
+                    // Save deleted sessions for undo
+                    state.deletedSessions = [...state.history];
                     state.history = [];
                     state.activeHistoryId = null;
                     await saveDataToGist();
                     renderHistory();
                     clearCurrentView();
+
+                    // Show toast with undo option
+                    showToast('All sessions deleted', 'You can undo this action', 'info', [
+                        { label: 'Undo', action: undoDeleteHistory }
+                    ], 30000);
                 });
+                modal.addEventListener('click', (e) => {
+                    if (e.target === modal) modal.remove();
+                });
+            }
+
+            async function undoDeleteHistory() {
+                if (state.deletedSessions.length > 0) {
+                    state.history = [...state.deletedSessions];
+                    state.deletedSessions = [];
+                    await saveDataToGist();
+                    renderHistory();
+                    showToast('Restored', 'All sessions have been restored', 'success');
+                }
+            }
+
+            function showToast(title, message, type = 'info', actions = [], duration = 5000) {
+                // Create toast container if it doesn't exist
+                let container = document.querySelector('.toast-container');
+                if (!container) {
+                    container = document.createElement('div');
+                    container.className = 'toast-container';
+                    document.body.appendChild(container);
+                }
+
+                // Create toast element
+                const toast = document.createElement('div');
+                toast.className = `toast toast-${type}`;
+
+                const actionsHTML = actions.length > 0
+                    ? `<div class="toast-actions">${actions.map((a, i) => `<button class="toast-btn" data-action="${i}">${a.label}</button>`).join('')}</div>`
+                    : '';
+
+                toast.innerHTML = `
+                    <div class="toast-content">
+                        <div class="toast-title">${title}</div>
+                        <div class="toast-message">${message}</div>
+                    </div>
+                    ${actionsHTML}
+                `;
+
+                container.appendChild(toast);
+
+                // Add action listeners
+                actions.forEach((action, index) => {
+                    const btn = toast.querySelector(`[data-action="${index}"]`);
+                    if (btn) {
+                        btn.addEventListener('click', () => {
+                            action.action();
+                            removeToast(toast);
+                        });
+                    }
+                });
+
+                // Show toast with animation
+                setTimeout(() => toast.classList.add('show'), 10);
+
+                // Auto-remove toast
+                if (duration > 0) {
+                    setTimeout(() => removeToast(toast), duration);
+                }
+
+                return toast;
+            }
+
+            function removeToast(toast) {
+                toast.classList.remove('show');
+                setTimeout(() => {
+                    if (toast.parentNode) {
+                        toast.parentNode.removeChild(toast);
+                    }
+                }, 300);
+            }
+
+            async function shareArticle(article) {
+                const shareText = `${article.title}\n\n${article.summary}${article.url ? '\n\nSource: ' + article.url : ''}`;
+
+                // Check if Web Share API is available
+                if (navigator.share) {
+                    try {
+                        await navigator.share({
+                            title: article.title,
+                            text: article.summary,
+                            url: article.url || window.location.href
+                        });
+                        showToast('Shared!', 'Article shared successfully', 'success');
+                    } catch (error) {
+                        if (error.name !== 'AbortError') {
+                            console.error('Share failed:', error);
+                            fallbackShare(shareText);
+                        }
+                    }
+                } else {
+                    fallbackShare(shareText);
+                }
+            }
+
+            function fallbackShare(text) {
+                const modal = document.createElement('div');
+                modal.className = 'overlay';
+                modal.innerHTML = `
+                    <div class="modal-box">
+                        <div class="modal-header"><h2>Share Article</h2></div>
+                        <div class="modal-body">
+                            <textarea
+                                id="shareText"
+                                readonly
+                                style="width: 100%; height: 200px; padding: 0.75rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-tertiary); color: var(--text-primary); font-size: 0.875rem; font-family: inherit;"
+                            >${text}</textarea>
+                            <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+                                <button class="btn btn-primary" id="copyShareText" style="flex: 1;">Copy to Clipboard</button>
+                                <button class="btn btn-secondary" id="closeShare" style="flex: 1;">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+
+                const shareTextArea = document.getElementById('shareText');
+                shareTextArea.select();
+
+                document.getElementById('copyShareText').addEventListener('click', async () => {
+                    try {
+                        await navigator.clipboard.writeText(text);
+                        showToast('Copied!', 'Share text copied to clipboard', 'success');
+                        modal.remove();
+                    } catch (error) {
+                        console.error('Copy failed:', error);
+                        showToast('Error', 'Failed to copy to clipboard', 'error');
+                    }
+                });
+
+                document.getElementById('closeShare').addEventListener('click', () => modal.remove());
                 modal.addEventListener('click', (e) => {
                     if (e.target === modal) modal.remove();
                 });
@@ -1150,6 +1325,7 @@ ARTICLES:\n\n`;
 
                     // Show progress bar
                     dom.progressContainer.classList.remove('hidden');
+                    dom.progressContainer.setAttribute('aria-valuenow', '0');
                     const totalBatches = Math.ceil(state.currentArticles.length / BATCH_SIZE);
 
                     // *** NEW BATCHING LOGIC ***
@@ -1162,6 +1338,7 @@ ARTICLES:\n\n`;
                         // Update progress
                         const progress = (currentBatch / totalBatches) * 100;
                         dom.progressBar.style.width = `${progress}%`;
+                        dom.progressContainer.querySelector('[role="progressbar"]').setAttribute('aria-valuenow', Math.round(progress));
                         dom.progressText.textContent = `Processing batch ${currentBatch} of ${totalBatches}... (${i + 1}-${i + batch.length} of ${state.currentArticles.length} articles)`;
 
                         const apiResponseText = await generateBatchSummaries(batch);
@@ -1229,13 +1406,58 @@ ARTICLES:\n\n`;
                     el.className = `history-item ${entry.id === state.activeHistoryId ? 'active' : ''}`;
                     el.dataset.id = entry.id;
                     el.innerHTML = `<div class="timestamp">${new Date(entry.timestamp).toLocaleString()}</div><div class="article-count">${entry.articles.length} article(s)</div>`;
+
+                    // Add tooltip on hover
+                    el.addEventListener('mouseenter', (e) => showHistoryTooltip(e, entry));
+                    el.addEventListener('mouseleave', hideHistoryTooltip);
+
                     dom.historyList.appendChild(el);
                 });
             }
+
+            function showHistoryTooltip(e, entry) {
+                if (!state.tooltip) {
+                    state.tooltip = document.createElement('div');
+                    state.tooltip.className = 'tooltip';
+                    document.body.appendChild(state.tooltip);
+                }
+
+                const articleTitles = entry.articles
+                    .slice(0, 3)
+                    .map(a => `• ${a.title}`)
+                    .join('\n');
+
+                const moreText = entry.articles.length > 3 ? `\n... and ${entry.articles.length - 3} more` : '';
+
+                state.tooltip.innerHTML = `
+                    <div class="tooltip-title">Session Preview</div>
+                    <div class="tooltip-preview">${articleTitles}${moreText}</div>
+                `;
+
+                // Position tooltip
+                const rect = e.currentTarget.getBoundingClientRect();
+                state.tooltip.style.left = `${rect.right + 10}px`;
+                state.tooltip.style.top = `${rect.top}px`;
+                state.tooltip.classList.add('show');
+            }
+
+            function hideHistoryTooltip() {
+                if (state.tooltip) {
+                    state.tooltip.classList.remove('show');
+                }
+            }
             
             function renderArticles() {
+                // Use DocumentFragment for better performance
+                const fragment = document.createDocumentFragment();
+                state.currentArticles.forEach(article => {
+                    fragment.appendChild(createArticleElement(article));
+                });
+
+                // Batch DOM update
                 dom.articlesContainer.innerHTML = '';
-                state.currentArticles.forEach(article => dom.articlesContainer.appendChild(createArticleElement(article)));
+                dom.articlesContainer.appendChild(fragment);
+
                 updatePlaceholder();
                 updateExpandAllButton();
 
@@ -1295,9 +1517,17 @@ ARTICLES:\n\n`;
                     summaryContainer.innerHTML = `
                         <div style="display: flex; justify-content: space-between; align-items: center;">
                             <h4>5-Point Summary</h4>
-                            <button class="icon-btn copy-summary-btn" title="Copy summary" data-summary="${article.summary.replace(/"/g, '&quot;')}" data-title="${article.title.replace(/"/g, '&quot;')}">
-                                <svg class="icon" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-                            </button>
+                            <div style="display: flex; gap: 0.25rem;">
+                                <button class="icon-btn share-btn" title="Share article" data-article-id="${article.id}">
+                                    <svg class="icon" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
+                                </button>
+                                <button class="icon-btn regenerate-btn" title="Regenerate summary" data-article-id="${article.id}">
+                                    <svg class="icon" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+                                </button>
+                                <button class="icon-btn copy-summary-btn" title="Copy summary" data-summary="${article.summary.replace(/"/g, '&quot;')}" data-title="${article.title.replace(/"/g, '&quot;')}">
+                                    <svg class="icon" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                </button>
+                            </div>
                         </div>
                         <div class="summary-box"><ul>${summaryHtml}</ul></div>
                     `;
@@ -1307,6 +1537,20 @@ ARTICLES:\n\n`;
                     copyBtn.addEventListener('click', (e) => {
                         e.stopPropagation();
                         copyToClipboard(article.title, article.summary, copyBtn);
+                    });
+
+                    // Add share functionality
+                    const shareBtn = summaryContainer.querySelector('.share-btn');
+                    shareBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        shareArticle(article);
+                    });
+
+                    // Add regenerate functionality
+                    const regenerateBtn = summaryContainer.querySelector('.regenerate-btn');
+                    regenerateBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        regenerateArticleSummary(article.id);
                     });
                 }
 
@@ -1339,6 +1583,43 @@ ARTICLES:\n\n`;
                     console.error('Failed to copy:', error);
                     showError('Failed to copy to clipboard', 'globalError');
                     setTimeout(() => hideError('globalError'), 3000);
+                }
+            }
+
+            async function regenerateArticleSummary(articleId) {
+                const article = state.currentArticles.find(a => a.id === articleId);
+                if (!article) return;
+
+                // Set article to loading state
+                article.isLoading = true;
+                article.error = null;
+                renderArticle(article);
+
+                try {
+                    // Generate new summary
+                    const apiResponseText = await generateBatchSummaries([article]);
+                    processApiResponse(apiResponseText, [article]);
+
+                    // Update in history if this is from a saved session
+                    if (state.activeHistoryId) {
+                        const historyEntry = state.history.find(h => h.id === state.activeHistoryId);
+                        if (historyEntry) {
+                            const historyArticle = historyEntry.articles.find(a => a.id === articleId);
+                            if (historyArticle) {
+                                historyArticle.summary = article.summary;
+                                historyArticle.title = article.title;
+                                await saveDataToGist();
+                            }
+                        }
+                    }
+
+                    // Re-render article
+                    renderArticle(article);
+                } catch (error) {
+                    console.error('Failed to regenerate summary:', error);
+                    article.isLoading = false;
+                    article.error = 'Failed to regenerate: ' + error.message;
+                    renderArticle(article);
                 }
             }
             
