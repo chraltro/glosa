@@ -4,13 +4,15 @@
  * Uses the same Firebase backend as Ansuz
  */
 
-import { initFirebase, signInWithGoogle, getCurrentUser, retrieveKeys as fbRetrieveKeys, saveKeys as fbSaveKeys } from './lib/firebase-auth.js';
+import { initFirebase, signInWithGoogle, getCurrentUser, retrieveKeys as fbRetrieveKeys, saveKeys as fbSaveKeys, signOut as fbSignOut } from './lib/firebase-auth.js';
 
 export async function initAuth() {
     try {
         await initFirebase();
         return true;
     } catch (error) {
+        // Firebase only backs key sync. Manual key entry still works without it,
+        // so a failure here must not block startup.
         console.error('Failed to initialize Firebase:', error);
         return false;
     }
@@ -52,4 +54,8 @@ export function getCurrentAuth() {
     return {
         googleUser: getCurrentUser()
     };
+}
+
+export async function signOutUser() {
+    await fbSignOut();
 }

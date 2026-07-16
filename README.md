@@ -1,55 +1,69 @@
 # Glosa - Article Summarizer
 
-A web application for processing and summarizing articles with automatic history management via GitHub Gists.
+A single-page web app that turns pasted articles into 5-bullet summaries using the Gemini API.
 
-## Features
+## How it works
 
-- Batch article processing with automatic summarization
-- Cross-device synchronization through private GitHub Gists
-- Browsable history with session management
-- Theme customization with multiple presets
-- Expandable summaries with full article text
-- Mobile-responsive interface
+1. Paste one or more articles into the box. Separate them with a line of `====================`.
+2. Click "Analyze & Save".
+3. Each article is parsed for a title and URL, then summarized. Sessions are saved to your history.
 
-## How It Works
+Articles are sent to Gemini in batches of 5 to stay under the API token limit. If an article has no
+`TITLE:` line, the model generates one.
 
-1. Paste article content (separate multiple articles with a line of `====================`)
-2. Click "Analyze & Save" to generate summaries
-3. Access your history from any device by logging in with the same credentials
+## Setup
 
-Each article is parsed to extract title and URL (if present), then processed to generate a concise 5-point summary. All sessions are automatically saved to a private Gist for cross-device access.
+You need a [Gemini API key](https://aistudio.google.com/app/apikey).
 
-## Prerequisites
+Optionally, a [GitHub personal access token](https://github.com/settings/tokens/new?scopes=gist&description=Glosa)
+with `gist` scope. With a token, history syncs to a private Gist and is available on any device you
+sign in from. Without one, history is kept in `localStorage` in that browser only.
 
-- [Google Gemini API key](https://aistudio.google.com/app/apikey)
-- [GitHub Personal Access Token](https://github.com/settings/tokens/new?scopes=gist&description=Glosa) with `gist` scope
+There are two ways to provide keys:
 
-## Usage
+- **Sign in with Google.** Keys are stored in Firestore and retrieved automatically on other devices.
+- **Enter keys manually.** Keys are stored in `localStorage` on that browser.
 
-The application is client-side only and requires no installation. Simply:
+Either way the key is also cached in `localStorage` so returning visits skip the login screen.
+Settings (gear icon, or Ctrl+,) lets you change keys later.
 
-1. Open the application
-2. Enter your API credentials (stored locally in your browser)
-3. Start analyzing articles
+## Running it
 
-## Technical Details
+No build step and no dependencies. Open `index.html` from any static web server. It has to be served
+over http(s) rather than opened as a `file://` path, because the app loads as an ES module and Google
+sign-in requires the domain to be listed in the Firebase console under authorized domains.
 
-Built with vanilla JavaScript as a single-page application. Uses the Gemini 2.5 Flash API for text summarization with batch processing to handle multiple articles efficiently.
+## Firebase
 
-### Data Storage
+Google sign-in and key sync use Firebase. `lib/firebase-config.js` holds the web config for the
+existing project. To point Glosa at your own project, replace that config and follow the setup notes
+in the same file: enable Google authentication, create a Firestore database, apply the rules given
+there, and add your domain to the authorized domains list.
 
-- **Credentials:** Stored in `localStorage` (browser-local only)
-- **History:** Private GitHub Gist (user-controlled)
-- **Processing:** Direct API calls (no intermediary servers)
+Sign-in is optional. If Firebase is unreachable the app still runs with manually entered keys.
 
-### Architecture
+## Keyboard shortcuts
 
-The application implements a streaming response pattern for real-time summary generation, processing articles in batches of 5 to balance API token limits with user experience. All state management is handled client-side with reactive UI updates.
+- `Ctrl/Cmd + Enter` analyze
+- `Ctrl/Cmd + K` focus the input
+- `Ctrl/Cmd + E` expand or collapse all
+- `Ctrl/Cmd + ,` settings
+- `Escape` close a dialog
 
-## Theme System
+## Data storage
 
-Includes multiple color schemes with light and dark variants. The default "Glosa" theme uses bronze amber accents inspired by Old Norse aesthetics.
+- Credentials: `localStorage`, plus Firestore (encrypted) when signed in with Google.
+- History: a private Gist when a GitHub token is set, otherwise `localStorage`.
+- Article text goes directly from the browser to the Gemini API. There is no server in between.
+
+The encryption on stored keys uses a key that ships in the source (`lib/crypto.js`). It keeps keys
+from being read at a glance, it is not protection against someone who wants them.
+
+## Themes
+
+Seven color schemes, light and dark. The default, "Glosa", uses a bronze amber accent. The theme
+follows the system light/dark preference until you pick one explicitly.
 
 ## License
 
-MIT
+MIT. See [LICENSE](LICENSE).
